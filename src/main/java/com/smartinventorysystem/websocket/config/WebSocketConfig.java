@@ -11,7 +11,6 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
 
@@ -19,8 +18,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
         registry.setApplicationDestinationPrefixes("/app");
     }
-
-
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
