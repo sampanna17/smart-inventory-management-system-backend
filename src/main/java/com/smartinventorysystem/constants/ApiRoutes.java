@@ -171,4 +171,12 @@ public final class ApiRoutes {
         private Notifications() {}
     }
 
+    public static final class Dashboard {
+        public static final String BASE = API + "/dashboard";
+
+        public static final String ADMIN = "/admin";
+        public static final String STAFF = "/staff";
+
+        private Dashboard() {}
+    }
 }
