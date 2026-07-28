@@ -21,4 +21,8 @@ public final class MessageConstants {
     public static final String STOCK_MOVEMENT_NOT_FOUND_MSG = "Stock movement not found with ID: ";
     public static final String STOCK_MOVEMENT_FETCHED = "Stock movement fetched successfully";
 
+    public static final String DASHBOARD_ADMIN_FETCH_SUCCESS = "Admin dashboard retrieved successfully.";
+
+    public static final String DASHBOARD_STAFF_FETCH_SUCCESS = "Staff dashboard retrieved successfully.";
+
 }
