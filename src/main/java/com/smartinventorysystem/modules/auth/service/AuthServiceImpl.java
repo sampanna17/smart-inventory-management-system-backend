@@ -1,5 +1,9 @@
 package com.smartinventorysystem.modules.auth.service;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 import com.smartinventorysystem.common.email.EmailService;
 import com.smartinventorysystem.common.email.ResetPasswordEmailService;
 import com.smartinventorysystem.constants.MessageConstants;
@@ -17,17 +21,22 @@ import com.smartinventorysystem.security.JwtUtil;
 import com.smartinventorysystem.security.TokenBlacklist;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
+
+    @Value("${spring.security.oauth2.client.registration.google.client-id}")
+    private String googleClientId;
 
     private final UserRepository userRepository;
     private final AuthUserMapper authUserMapper;
@@ -37,6 +46,8 @@ public class AuthServiceImpl implements AuthService {
     private final Clock clock;
     private final EmailService emailService;
     private final ResetPasswordEmailService resetPasswordEmailService;
+
+
 
     @Override
     public AuthResponse signup(SignupRequest request) {
@@ -165,6 +176,41 @@ public class AuthServiceImpl implements AuthService {
         user.setTokenExpiry(null);
         user.setUpdatedAt(LocalDateTime.now(clock));
         userRepository.save(user);
+    }
+
+    @Override
+    public AuthResponse authenticateGoogleUser(String idTokenString) {
+        try {
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
+                    .setAudience(Collections.singletonList(googleClientId))
+                    .build();
+            GoogleIdToken idToken = verifier.verify(idTokenString);
+
+            if (idToken != null) {
+                GoogleIdToken.Payload payload = idToken.getPayload();
+                String email = payload.getEmail();
+
+                User existingUser = userRepository.findByEmail(email)
+                        .orElseThrow(() -> new UnauthorizedException("User with this email does not exist. Please register via manual sign-up first."));
+
+                if (existingUser.getStatus() != Status.ACTIVE) {
+                    throw new DisabledException("Your account has been deactivated.");
+                }
+
+                String token = jwtUtil.generateToken(existingUser.getEmail(), existingUser.getRole().name(), existingUser.getUserID());
+
+                AuthResponse response = authUserMapper.toResponse(existingUser);
+                response.setStatus(existingUser.getStatus().name());
+                response.setToken(token);
+                return response;
+            } else {
+                throw new UnauthorizedException("Invalid Google ID token.");
+            }
+        } catch (UnauthorizedException | DisabledException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new UnauthorizedException("Google authentication failed: " + e.getMessage());
+        }
     }
 
 }
