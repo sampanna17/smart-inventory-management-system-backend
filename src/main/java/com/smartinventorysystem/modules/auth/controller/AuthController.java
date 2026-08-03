@@ -8,6 +8,7 @@ import com.smartinventorysystem.modules.auth.dto.request.LoginRequest;
 import com.smartinventorysystem.modules.auth.dto.request.SignupRequest;
 import com.smartinventorysystem.modules.auth.dto.request.ForgotPasswordRequest;
 import com.smartinventorysystem.modules.auth.dto.request.ResetPasswordRequest;
+import com.smartinventorysystem.modules.auth.dto.request.GoogleLoginRequest;
 import com.smartinventorysystem.modules.auth.service.AuthService;
 import com.smartinventorysystem.constants.ApiRoutes;
 import com.smartinventorysystem.security.JwtUtil;
@@ -51,6 +52,20 @@ public class AuthController {
                         .status(HttpStatus.OK.value())
                         .success(true)
                         .message("Login successful")
+                        .data(response)
+                        .timestamp(LocalDateTime.now(clock))
+                        .build()
+        );
+    }
+
+    @PostMapping(ApiRoutes.Auth.LOGIN_GOOGLE)
+    public ResponseEntity<ApiResponse<AuthResponse>> loginWithGoogle(@Valid @RequestBody GoogleLoginRequest request) {
+        AuthResponse response = authService.authenticateGoogleUser(request.getIdToken());
+        return ResponseEntity.ok(
+                ApiResponse.<AuthResponse>builder()
+                        .status(HttpStatus.OK.value())
+                        .success(true)
+                        .message("Google Login successful")
                         .data(response)
                         .timestamp(LocalDateTime.now(clock))
                         .build()

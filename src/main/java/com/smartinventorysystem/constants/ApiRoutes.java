@@ -11,6 +11,7 @@ public final class ApiRoutes {
 
         public static final String SIGNUP = "/signup";
         public static final String LOGIN = "/login";
+        public static final String LOGIN_GOOGLE = "/login/google";
         public static final String LOGOUT = "/logout";
         public static final String ACTIVATE = "/activate";
         public static final String RESEND_ACTIVATE = "/resend-activation";
