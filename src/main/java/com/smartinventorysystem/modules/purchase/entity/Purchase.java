@@ -2,7 +2,6 @@ package com.smartinventorysystem.modules.purchase.entity;
 
 import com.smartinventorysystem.enums.PurchaseStatus;
 import com.smartinventorysystem.modules.supplier.entity.Supplier;
-import com.smartinventorysystem.modules.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.springframework.data.annotation.CreatedDate;

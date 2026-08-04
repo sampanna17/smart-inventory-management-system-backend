@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class ResetPasswordEmail implements ResetPasswordEmailService{
+public class ResetPasswordEmail implements ResetPasswordEmailService {
 
     private final JavaMailSender mailSender;
 
@@ -19,7 +19,7 @@ public class ResetPasswordEmail implements ResetPasswordEmailService{
 
     public void sendResetPasswordEmail(String toEmail, String fullName, String token) {
 
-        String resetLink = "http://localhost:5173/reset-password?token=" + token;
+        String resetLink = "http://localhost:4200/auth/reset-password?token=" + token;
 
         String subject = "Reset Your Smart Inventory Password";
 
@@ -82,7 +82,8 @@ public class ResetPasswordEmail implements ResetPasswordEmailService{
 
                 </body>
                 </html>
-                """.formatted(fullName, resetLink);
+                """
+                .formatted(fullName, resetLink);
 
         try {
             MimeMessage message = mailSender.createMimeMessage();

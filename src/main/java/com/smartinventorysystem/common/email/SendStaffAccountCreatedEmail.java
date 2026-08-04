@@ -22,7 +22,7 @@ public class SendStaffAccountCreatedEmail implements EmailService {
                                              String fullName,
                                              String token) {
 
-        String activationLink = "http://localhost:5173/activate?token=" + token;
+        String activationLink = "http://localhost:4200/activate?token=" + token;
 
         String subject = "Activate Your Smart Inventory Account";
 
