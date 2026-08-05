@@ -26,7 +26,7 @@ public class DatabaseConnectionChecker implements CommandLineRunner {
     }
 
     @Override
-    public void run(String @NonNull [] args) {
+    public void run(String @NonNull ... args) {
 
         checkConnection("AUTH DB", authDataSource);
         checkConnection("SIMS DB", simsDataSource);
