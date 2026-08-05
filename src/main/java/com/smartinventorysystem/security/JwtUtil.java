@@ -4,6 +4,7 @@ import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import com.smartinventorysystem.exceptions.UnauthorizedException;
 
 import java.security.Key;
 import java.util.Date;
@@ -14,7 +15,7 @@ public class JwtUtil {
     @Value("${jwt.secret}")
     private String secret;
 
-    private static final long EXPIRATION_TIME  = 24 * 60 * 60 * 1000;
+    private static final long EXPIRATION_TIME = 24L * 60 * 60 * 1000;
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes());
@@ -58,7 +59,7 @@ public class JwtUtil {
 
     public String extractToken(String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new RuntimeException("Missing token");
+            throw new UnauthorizedException("Missing or invalid token");
         }
         return authHeader.substring(7);
     }
