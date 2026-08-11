@@ -19,6 +19,7 @@ public final class ApiRoutes {
         public static final String RESET_PASSWORD = "/reset-password";
 
         private Auth() {}
+
     }
 
     public static final class Users {
