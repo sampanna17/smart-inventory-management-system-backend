@@ -1,8 +1,10 @@
 package com.smartinventorysystem.modules.unit.controller;
 
-import com.smartinventorysystem.constants.ApiRoutes;
 import com.smartinventorysystem.common.dto.ApiResponse;
+import com.smartinventorysystem.common.dto.PageResponse;
+import com.smartinventorysystem.constants.ApiRoutes;
 import com.smartinventorysystem.modules.unit.dto.request.CreateUnitRequest;
+import com.smartinventorysystem.modules.unit.dto.request.UnitFilterRequest;
 import com.smartinventorysystem.modules.unit.dto.request.UpdateUnitRequest;
 import com.smartinventorysystem.modules.unit.dto.response.UnitResponse;
 import com.smartinventorysystem.modules.unit.service.UnitService;
@@ -95,7 +97,24 @@ public class UnitController {
     }
 
     @GetMapping(ApiRoutes.Units.GET_ALL)
-    public ResponseEntity<ApiResponse<List<UnitResponse>>> getAll() {
+    public ResponseEntity<ApiResponse<PageResponse<UnitResponse>>> getUnits(
+            @Valid @ModelAttribute UnitFilterRequest filterRequest) {
+
+        PageResponse<UnitResponse> response = unitService.getUnits(filterRequest);
+
+        return ResponseEntity.ok(
+                ApiResponse.<PageResponse<UnitResponse>>builder()
+                        .status(HttpStatus.OK.value())
+                        .success(true)
+                        .message("Units fetched successfully")
+                        .data(response)
+                        .timestamp(LocalDateTime.now(clock))
+                        .build()
+        );
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<ApiResponse<List<UnitResponse>>> getAllUnits() {
 
         List<UnitResponse> response = unitService.getAllUnits();
 
@@ -103,7 +122,7 @@ public class UnitController {
                 ApiResponse.<List<UnitResponse>>builder()
                         .status(HttpStatus.OK.value())
                         .success(true)
-                        .message("Units fetched successfully")
+                        .message("All units fetched successfully")
                         .data(response)
                         .timestamp(LocalDateTime.now(clock))
                         .build()
