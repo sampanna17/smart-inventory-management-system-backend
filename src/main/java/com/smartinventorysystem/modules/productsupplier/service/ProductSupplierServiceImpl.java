@@ -15,10 +15,12 @@ import com.smartinventorysystem.exceptions.BadRequestException;
 import com.smartinventorysystem.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class ProductSupplierServiceImpl implements ProductSupplierService {
 
@@ -75,10 +77,11 @@ public class ProductSupplierServiceImpl implements ProductSupplierService {
             );
         }
 
-        productSupplierRepository.deleteByProductProductIdAndSupplierSupplierId(
-                productId,
-                supplierId
-        );
+        ProductSupplierId id = new ProductSupplierId();
+        id.setProductID(productId);
+        id.setSupplierID(supplierId);
+
+        productSupplierRepository.deleteById(id);
     }
 
     @Override

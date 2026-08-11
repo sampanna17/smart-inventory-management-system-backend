@@ -1,8 +1,10 @@
 package com.smartinventorysystem.modules.product.controller;
 
 import com.smartinventorysystem.common.dto.ApiResponse;
+import com.smartinventorysystem.common.dto.PageResponse;
 import com.smartinventorysystem.constants.ApiRoutes;
 import com.smartinventorysystem.modules.product.dto.request.CreateProductRequest;
+import com.smartinventorysystem.modules.product.dto.request.ProductFilterRequest;
 import com.smartinventorysystem.modules.product.dto.request.UpdateProductRequest;
 import com.smartinventorysystem.modules.product.dto.response.ProductResponse;
 import com.smartinventorysystem.modules.product.service.ProductService;
@@ -97,6 +99,23 @@ public class ProductController {
     }
 
     @GetMapping(ApiRoutes.Products.GET_ALL)
+    public ResponseEntity<ApiResponse<PageResponse<ProductResponse>>> getProducts(
+            @Valid @ModelAttribute ProductFilterRequest filterRequest) {
+
+        PageResponse<ProductResponse> response = productService.getProducts(filterRequest);
+
+        return ResponseEntity.ok(
+                ApiResponse.<PageResponse<ProductResponse>>builder()
+                        .status(HttpStatus.OK.value())
+                        .success(true)
+                        .message("Products fetched successfully")
+                        .data(response)
+                        .timestamp(LocalDateTime.now(clock))
+                        .build()
+        );
+    }
+
+    @GetMapping("/all")
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getAllProducts() {
 
         List<ProductResponse> response = productService.getAllProducts();
@@ -105,7 +124,7 @@ public class ProductController {
                 ApiResponse.<List<ProductResponse>>builder()
                         .status(HttpStatus.OK.value())
                         .success(true)
-                        .message("Products fetched successfully")
+                        .message("All products fetched successfully")
                         .data(response)
                         .timestamp(LocalDateTime.now(clock))
                         .build()
