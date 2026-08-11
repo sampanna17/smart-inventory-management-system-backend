@@ -1,8 +1,10 @@
 package com.smartinventorysystem.modules.supplier.controller;
 
-import com.smartinventorysystem.constants.ApiRoutes;
 import com.smartinventorysystem.common.dto.ApiResponse;
+import com.smartinventorysystem.common.dto.PageResponse;
+import com.smartinventorysystem.constants.ApiRoutes;
 import com.smartinventorysystem.modules.supplier.dto.request.CreateSupplierRequest;
+import com.smartinventorysystem.modules.supplier.dto.request.SupplierFilterRequest;
 import com.smartinventorysystem.modules.supplier.dto.request.UpdateSupplierRequest;
 import com.smartinventorysystem.modules.supplier.dto.response.SupplierResponse;
 import com.smartinventorysystem.modules.supplier.service.SupplierService;
@@ -95,7 +97,24 @@ public class SupplierController {
     }
 
     @GetMapping(ApiRoutes.Suppliers.GET_ALL)
-    public ResponseEntity<ApiResponse<List<SupplierResponse>>> getAll() {
+    public ResponseEntity<ApiResponse<PageResponse<SupplierResponse>>> getSuppliers(
+            @Valid @ModelAttribute SupplierFilterRequest filterRequest) {
+
+        PageResponse<SupplierResponse> response = supplierService.getSuppliers(filterRequest);
+
+        return ResponseEntity.ok(
+                ApiResponse.<PageResponse<SupplierResponse>>builder()
+                        .status(HttpStatus.OK.value())
+                        .success(true)
+                        .message("Suppliers fetched successfully")
+                        .data(response)
+                        .timestamp(LocalDateTime.now(clock))
+                        .build()
+        );
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<ApiResponse<List<SupplierResponse>>> getAllSuppliers() {
 
         List<SupplierResponse> response = supplierService.getAllSuppliers();
 
@@ -103,7 +122,7 @@ public class SupplierController {
                 ApiResponse.<List<SupplierResponse>>builder()
                         .status(HttpStatus.OK.value())
                         .success(true)
-                        .message("Suppliers fetched successfully")
+                        .message("All suppliers fetched successfully")
                         .data(response)
                         .timestamp(LocalDateTime.now(clock))
                         .build()
