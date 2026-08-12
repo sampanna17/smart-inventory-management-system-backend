@@ -20,10 +20,17 @@ import com.smartinventorysystem.modules.supplier.entity.Supplier;
 import com.smartinventorysystem.modules.supplier.repository.SupplierRepository;
 import com.smartinventorysystem.modules.user.entity.User;
 import com.smartinventorysystem.modules.user.service.UserService;
+import com.smartinventorysystem.common.dto.PageResponse;
 import com.smartinventorysystem.enums.MovementType;
-
+import com.smartinventorysystem.modules.purchase.dto.request.PurchaseFilterRequest;
+import com.smartinventorysystem.modules.purchase.specification.PurchaseSpecification;
 import lombok.RequiredArgsConstructor;
 import com.smartinventorysystem.utils.AuthenticatedUserProvider;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -186,6 +193,9 @@ public class PurchaseServiceImpl implements PurchaseService {
     public List<PurchaseResponse> getAllPurchases() {
         List<Purchase> purchases = purchaseRepository.findAllWithDetails();
         List<PurchaseResponse> responses = purchaseMapper.toResponseList(purchases);
+        if (responses == null) {
+            return new ArrayList<>();
+        }
 
         List<Integer> userIds = responses.stream()
                 .map(PurchaseResponse::getUserId)
@@ -194,10 +204,111 @@ public class PurchaseServiceImpl implements PurchaseService {
                 .toList();
 
         Map<Integer, String> userNames = userService.getUserFullNames(userIds);
-
-        responses.forEach(response ->
-                response.setUserName(userNames.get(response.getUserId())));
+        if (userNames != null) {
+            responses.forEach(response -> {
+                if (response.getUserId() != null) {
+                    response.setUserName(userNames.get(response.getUserId()));
+                }
+            });
+        }
         return responses;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<PurchaseResponse> getPurchases(PurchaseFilterRequest request) {
+        Pageable pageable = createPageable(request);
+        Specification<Purchase> specification = PurchaseSpecification.withFilters(request);
+
+        Page<Purchase> purchasePage = purchaseRepository.findAll(specification, pageable);
+        if (purchasePage.isEmpty()) {
+            return PageResponse.<PurchaseResponse>builder()
+                    .content(new ArrayList<>())
+                    .pageNumber(purchasePage.getNumber())
+                    .pageSize(purchasePage.getSize())
+                    .totalElements(purchasePage.getTotalElements())
+                    .totalPages(purchasePage.getTotalPages())
+                    .first(purchasePage.isFirst())
+                    .last(purchasePage.isLast())
+                    .hasNext(purchasePage.hasNext())
+                    .hasPrevious(purchasePage.hasPrevious())
+                    .build();
+        }
+
+        List<Integer> purchaseIds = purchasePage.getContent().stream()
+                .map(Purchase::getPurchaseId)
+                .toList();
+
+        List<Purchase> detailedPurchases = purchaseRepository.findAllByIdInWithDetails(purchaseIds);
+
+        Map<Integer, Purchase> purchaseMap = new HashMap<>();
+        detailedPurchases.forEach(p -> purchaseMap.put(p.getPurchaseId(), p));
+
+        List<Purchase> orderedPurchases = purchaseIds.stream()
+                .map(purchaseMap::get)
+                .filter(Objects::nonNull)
+                .toList();
+
+        List<PurchaseResponse> content = purchaseMapper.toResponseList(orderedPurchases);
+        if (content == null) {
+            content = new ArrayList<>();
+        }
+
+        List<Integer> userIds = content.stream()
+                .map(PurchaseResponse::getUserId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        Map<Integer, String> userNames = userService.getUserFullNames(userIds);
+        if (userNames != null) {
+            content.forEach(res -> {
+                if (res.getUserId() != null) {
+                    res.setUserName(userNames.get(res.getUserId()));
+                }
+            });
+        }
+
+        return PageResponse.<PurchaseResponse>builder()
+                .content(content)
+                .pageNumber(purchasePage.getNumber())
+                .pageSize(purchasePage.getSize())
+                .totalElements(purchasePage.getTotalElements())
+                .totalPages(purchasePage.getTotalPages())
+                .first(purchasePage.isFirst())
+                .last(purchasePage.isLast())
+                .hasNext(purchasePage.hasNext())
+                .hasPrevious(purchasePage.hasPrevious())
+                .build();
+    }
+
+    private Pageable createPageable(PurchaseFilterRequest request) {
+        int page = (request != null && request.getPage() != null) ? request.getPage() : 0;
+        int size = (request != null && request.getSize() != null) ? request.getSize() : 10;
+
+        String sortBy = (request != null && request.getSortBy() != null) ? request.getSortBy() : "purchaseDate";
+        String sortDir = (request != null && request.getSortDir() != null) ? request.getSortDir() : "desc";
+
+        String targetProperty = mapSortProperty(sortBy);
+        Sort.Direction direction = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+
+        Sort sort = Sort.by(direction, targetProperty);
+        return PageRequest.of(page, size, sort);
+    }
+
+    private String mapSortProperty(String sortBy) {
+        if (sortBy == null) {
+            return "purchaseDate";
+        }
+        return switch (sortBy.trim().toLowerCase()) {
+            case "purchasenumber", "number" -> "purchaseNumber";
+            case "date", "purchasedate" -> "purchaseDate";
+            case "amount", "totalamount" -> "totalAmount";
+            case "status" -> "status";
+            case "createdat" -> "createdAt";
+            case "id", "purchaseid" -> "purchaseId";
+            default -> "purchaseDate";
+        };
     }
 
     @Override

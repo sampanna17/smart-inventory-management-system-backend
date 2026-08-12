@@ -1,6 +1,8 @@
 package com.smartinventorysystem.modules.purchase.service;
 
+import com.smartinventorysystem.common.dto.PageResponse;
 import com.smartinventorysystem.modules.purchase.dto.request.CreatePurchaseRequest;
+import com.smartinventorysystem.modules.purchase.dto.request.PurchaseFilterRequest;
 import com.smartinventorysystem.modules.purchase.dto.request.UpdatePurchaseRequest;
 import com.smartinventorysystem.modules.purchase.dto.request.UpdatePurchaseStatusRequest;
 import com.smartinventorysystem.modules.purchase.dto.response.PurchaseResponse;
@@ -18,6 +20,8 @@ public interface PurchaseService {
     PurchaseResponse getPurchaseById(Integer purchaseId);
 
     List<PurchaseResponse> getAllPurchases();
+
+    PageResponse<PurchaseResponse> getPurchases(PurchaseFilterRequest request);
 
     PurchaseResponse updatePurchaseStatus(Integer purchaseId,
                                           UpdatePurchaseStatusRequest request);

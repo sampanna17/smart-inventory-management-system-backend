@@ -4,6 +4,7 @@ import com.smartinventorysystem.enums.SaleStatus;
 import com.smartinventorysystem.modules.sale.entity.Sale;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -12,7 +13,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-public interface SaleRepository extends JpaRepository<Sale, Integer> {
+public interface SaleRepository extends JpaRepository<Sale, Integer>, JpaSpecificationExecutor<Sale> {
 
     Optional<Sale> findByInvoiceNumber(String invoiceNumber);
 
@@ -23,6 +24,10 @@ public interface SaleRepository extends JpaRepository<Sale, Integer> {
     @EntityGraph(attributePaths = {"customer"})
     @Query("SELECT s FROM Sale s")
     List<Sale> findAllWithCustomer();
+
+    @EntityGraph(attributePaths = {"customer"})
+    @Query("SELECT s FROM Sale s WHERE s.saleID IN :ids")
+    List<Sale> findAllByIdInWithCustomer(@Param("ids") List<Integer> ids);
 
     @EntityGraph(attributePaths = {"customer"})
     @Query("SELECT s FROM Sale s WHERE s.customer.customerID = :customerId")

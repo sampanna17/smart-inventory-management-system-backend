@@ -25,8 +25,16 @@ import com.smartinventorysystem.modules.sale.repository.SaleDetailRepository;
 import com.smartinventorysystem.modules.stockmovement.service.StockMovementService;
 import com.smartinventorysystem.modules.user.entity.User;
 import com.smartinventorysystem.modules.user.service.UserService;
+import com.smartinventorysystem.common.dto.PageResponse;
+import com.smartinventorysystem.modules.sale.dto.request.SaleFilterRequest;
+import com.smartinventorysystem.modules.sale.specification.SaleSpecification;
 import lombok.RequiredArgsConstructor;
 import com.smartinventorysystem.utils.AuthenticatedUserProvider;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +43,7 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -118,6 +127,10 @@ public class SaleServiceImpl implements SaleService {
             throw new InvalidSaleStatusException("Only COMPLETED sales can be edited.");
         }
 
+        Integer effectiveUserId = sale.getUserID() != null 
+                ? sale.getUserID() 
+                : authenticatedUserProvider.getCurrentUserId();
+
         Customer customer = getCustomerIfPresent(request.getCustomerId());
         sale.setCustomer(customer);
         sale.setSaleDate(request.getSaleDate());
@@ -125,9 +138,12 @@ public class SaleServiceImpl implements SaleService {
         List<SaleDetail> oldDetails = saleDetailRepository.findBySaleIdWithProduct(saleId);
         restoreStock(
                 oldDetails,
-                sale.getUserID(),
+                effectiveUserId,
                 "Sale stock restored for update " + sale.getInvoiceNumber()
         );
+
+        saleDetailRepository.deleteAll(oldDetails);
+        saleDetailRepository.flush();
 
         List<SaleDetail> newDetails = new ArrayList<>();
         BigDecimal totalAmount = BigDecimal.ZERO;
@@ -141,7 +157,7 @@ public class SaleServiceImpl implements SaleService {
                     product,
                     itemReq.getQuantity(),
                     MovementType.SALE,
-                    sale.getUserID(),
+                    effectiveUserId,
                     "Stock deducted for sale update " + sale.getInvoiceNumber()
             );
 
@@ -160,9 +176,7 @@ public class SaleServiceImpl implements SaleService {
 
         sale.setTotalAmount(totalAmount);
 
-        saleDetailRepository.deleteBySaleId(saleId);
         List<SaleDetail> savedDetails = saleDetailRepository.saveAll(newDetails);
-
         Sale updatedSale = saleRepository.save(sale);
 
         SaleResponse response = saleMapper.toResponse(updatedSale, savedDetails);
@@ -179,14 +193,18 @@ public class SaleServiceImpl implements SaleService {
         List<SaleDetail> details = saleDetailRepository.findBySaleIdWithProduct(saleId);
 
         if (sale.getStatus() == SaleStatus.COMPLETED) {
+            Integer effectiveUserId = sale.getUserID() != null 
+                    ? sale.getUserID() 
+                    : authenticatedUserProvider.getCurrentUserId();
+
             restoreStock(
                     details,
-                    sale.getUserID(),
+                    effectiveUserId,
                     "Sale deleted and stock restored " + sale.getInvoiceNumber()
             );
         }
 
-        saleDetailRepository.deleteBySaleId(saleId);
+        saleDetailRepository.deleteAll(details);
         saleRepository.delete(sale);
     }
 
@@ -248,6 +266,85 @@ public class SaleServiceImpl implements SaleService {
     public List<SaleSummaryResponse> getAllSales() {
         List<Sale> sales = saleRepository.findAllWithCustomer();
         return mapToSummaryResponses(sales);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<SaleSummaryResponse> getSales(SaleFilterRequest request) {
+        Pageable pageable = createPageable(request);
+        Specification<Sale> specification = SaleSpecification.withFilters(request);
+
+        Page<Sale> salePage = saleRepository.findAll(specification, pageable);
+        if (salePage.isEmpty()) {
+            return PageResponse.<SaleSummaryResponse>builder()
+                    .content(new ArrayList<>())
+                    .pageNumber(salePage.getNumber())
+                    .pageSize(salePage.getSize())
+                    .totalElements(salePage.getTotalElements())
+                    .totalPages(salePage.getTotalPages())
+                    .first(salePage.isFirst())
+                    .last(salePage.isLast())
+                    .hasNext(salePage.hasNext())
+                    .hasPrevious(salePage.hasPrevious())
+                    .build();
+        }
+
+        List<Integer> saleIds = salePage.getContent().stream()
+                .map(Sale::getSaleID)
+                .toList();
+
+        List<Sale> detailedSales = saleRepository.findAllByIdInWithCustomer(saleIds);
+
+        Map<Integer, Sale> saleMap = new HashMap<>();
+        detailedSales.forEach(s -> saleMap.put(s.getSaleID(), s));
+
+        List<Sale> orderedSales = saleIds.stream()
+                .map(saleMap::get)
+                .filter(Objects::nonNull)
+                .toList();
+
+        List<SaleSummaryResponse> content = mapToSummaryResponses(orderedSales);
+
+        return PageResponse.<SaleSummaryResponse>builder()
+                .content(content)
+                .pageNumber(salePage.getNumber())
+                .pageSize(salePage.getSize())
+                .totalElements(salePage.getTotalElements())
+                .totalPages(salePage.getTotalPages())
+                .first(salePage.isFirst())
+                .last(salePage.isLast())
+                .hasNext(salePage.hasNext())
+                .hasPrevious(salePage.hasPrevious())
+                .build();
+    }
+
+    private Pageable createPageable(SaleFilterRequest request) {
+        int page = (request != null && request.getPage() != null) ? request.getPage() : 0;
+        int size = (request != null && request.getSize() != null) ? request.getSize() : 10;
+
+        String sortBy = (request != null && request.getSortBy() != null) ? request.getSortBy() : "saleDate";
+        String sortDir = (request != null && request.getSortDir() != null) ? request.getSortDir() : "desc";
+
+        String targetProperty = mapSortProperty(sortBy);
+        Sort.Direction direction = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+
+        Sort sort = Sort.by(direction, targetProperty);
+        return PageRequest.of(page, size, sort);
+    }
+
+    private String mapSortProperty(String sortBy) {
+        if (sortBy == null) {
+            return "saleDate";
+        }
+        return switch (sortBy.trim().toLowerCase()) {
+            case "invoicenumber", "invoice", "number" -> "invoiceNumber";
+            case "date", "saledate" -> "saleDate";
+            case "amount", "totalamount" -> "totalAmount";
+            case "status" -> "status";
+            case "createdat" -> "createdAt";
+            case "id", "saleid" -> "saleID";
+            default -> "saleDate";
+        };
     }
 
     @Override

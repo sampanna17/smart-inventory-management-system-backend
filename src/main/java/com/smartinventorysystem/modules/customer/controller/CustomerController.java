@@ -1,8 +1,10 @@
 package com.smartinventorysystem.modules.customer.controller;
 
-import com.smartinventorysystem.constants.ApiRoutes;
 import com.smartinventorysystem.common.dto.ApiResponse;
+import com.smartinventorysystem.common.dto.PageResponse;
+import com.smartinventorysystem.constants.ApiRoutes;
 import com.smartinventorysystem.modules.customer.dto.request.CreateCustomerRequest;
+import com.smartinventorysystem.modules.customer.dto.request.CustomerFilterRequest;
 import com.smartinventorysystem.modules.customer.dto.request.UpdateCustomerRequest;
 import com.smartinventorysystem.modules.customer.dto.response.CustomerResponse;
 import com.smartinventorysystem.modules.customer.service.CustomerService;
@@ -10,7 +12,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Clock;
@@ -26,7 +27,6 @@ public class CustomerController {
     private final Clock clock;
 
     @PostMapping(ApiRoutes.Customers.CREATE)
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<CustomerResponse>> createCustomer(
             @Valid @RequestBody CreateCustomerRequest request) {
 
@@ -44,7 +44,6 @@ public class CustomerController {
     }
 
     @PutMapping(ApiRoutes.Customers.UPDATE)
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<CustomerResponse>> updateCustomer(
             @PathVariable Integer customerId,
             @RequestBody UpdateCustomerRequest request) {
@@ -63,7 +62,6 @@ public class CustomerController {
     }
 
     @DeleteMapping(ApiRoutes.Customers.DELETE)
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteCustomer(@PathVariable Integer customerId) {
 
         customerService.deleteCustomer(customerId);
@@ -95,7 +93,24 @@ public class CustomerController {
     }
 
     @GetMapping(ApiRoutes.Customers.GET_ALL)
-    public ResponseEntity<ApiResponse<List<CustomerResponse>>> getAll() {
+    public ResponseEntity<ApiResponse<PageResponse<CustomerResponse>>> getCustomers(
+            @Valid @ModelAttribute CustomerFilterRequest filterRequest) {
+
+        PageResponse<CustomerResponse> response = customerService.getCustomers(filterRequest);
+
+        return ResponseEntity.ok(
+                ApiResponse.<PageResponse<CustomerResponse>>builder()
+                        .status(HttpStatus.OK.value())
+                        .success(true)
+                        .message("Customers fetched successfully")
+                        .data(response)
+                        .timestamp(LocalDateTime.now(clock))
+                        .build()
+        );
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<ApiResponse<List<CustomerResponse>>> getAllCustomers() {
 
         List<CustomerResponse> response = customerService.getAllCustomers();
 
@@ -103,7 +118,7 @@ public class CustomerController {
                 ApiResponse.<List<CustomerResponse>>builder()
                         .status(HttpStatus.OK.value())
                         .success(true)
-                        .message("Customers fetched successfully")
+                        .message("All customers fetched successfully")
                         .data(response)
                         .timestamp(LocalDateTime.now(clock))
                         .build()

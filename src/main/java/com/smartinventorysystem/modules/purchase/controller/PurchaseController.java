@@ -1,8 +1,10 @@
 package com.smartinventorysystem.modules.purchase.controller;
 
 import com.smartinventorysystem.common.dto.ApiResponse;
+import com.smartinventorysystem.common.dto.PageResponse;
 import com.smartinventorysystem.constants.ApiRoutes;
 import com.smartinventorysystem.modules.purchase.dto.request.CreatePurchaseRequest;
+import com.smartinventorysystem.modules.purchase.dto.request.PurchaseFilterRequest;
 import com.smartinventorysystem.modules.purchase.dto.request.UpdatePurchaseRequest;
 import com.smartinventorysystem.modules.purchase.dto.request.UpdatePurchaseStatusRequest;
 import com.smartinventorysystem.modules.purchase.dto.response.PurchaseResponse;
@@ -98,12 +100,13 @@ public class PurchaseController {
     }
 
     @GetMapping(ApiRoutes.Purchases.GET_ALL)
-    public ResponseEntity<ApiResponse<List<PurchaseResponse>>> getAllPurchases() {
+    public ResponseEntity<ApiResponse<PageResponse<PurchaseResponse>>> getPurchases(
+            @Valid @ModelAttribute PurchaseFilterRequest filterRequest) {
 
-        List<PurchaseResponse> response = purchaseService.getAllPurchases();
+        PageResponse<PurchaseResponse> response = purchaseService.getPurchases(filterRequest);
 
         return ResponseEntity.ok(
-                ApiResponse.<List<PurchaseResponse>>builder()
+                ApiResponse.<PageResponse<PurchaseResponse>>builder()
                         .status(HttpStatus.OK.value())
                         .success(true)
                         .message("Purchases fetched successfully")
@@ -149,4 +152,3 @@ public class PurchaseController {
         );
     }
 }
-

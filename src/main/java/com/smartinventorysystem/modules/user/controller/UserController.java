@@ -2,6 +2,8 @@ package com.smartinventorysystem.modules.user.controller;
 
 import com.smartinventorysystem.constants.ApiRoutes;
 import com.smartinventorysystem.common.dto.ApiResponse;
+import com.smartinventorysystem.common.dto.PageResponse;
+import com.smartinventorysystem.modules.user.dto.request.UserFilterRequest;
 import com.smartinventorysystem.modules.user.dto.request.CreateStaffRequest;
 import com.smartinventorysystem.modules.user.dto.request.UpdateProfileRequest;
 import com.smartinventorysystem.modules.user.dto.response.CreateStaffResponse;
@@ -97,6 +99,24 @@ public class UserController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> getUsers(
+            @Valid @ModelAttribute UserFilterRequest filterRequest) {
+
+        PageResponse<UserResponse> response = userService.getUsers(filterRequest);
+
+        return ResponseEntity.ok(
+                ApiResponse.<PageResponse<UserResponse>>builder()
+                        .status(HttpStatus.OK.value())
+                        .success(true)
+                        .message("Users fetched successfully")
+                        .data(response)
+                        .timestamp(LocalDateTime.now(clock))
+                        .build()
+        );
+    }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers() {
 
         List<UserResponse> users = userService.getAllUsers();
@@ -105,7 +125,7 @@ public class UserController {
                 ApiResponse.<List<UserResponse>>builder()
                         .status(HttpStatus.OK.value())
                         .success(true)
-                        .message("Users fetched successfully")
+                        .message("All users fetched successfully")
                         .data(users)
                         .timestamp(LocalDateTime.now(clock))
                         .build()
