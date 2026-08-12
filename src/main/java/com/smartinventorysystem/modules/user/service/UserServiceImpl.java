@@ -16,12 +16,19 @@ import com.smartinventorysystem.modules.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import com.smartinventorysystem.common.dto.PageResponse;
+import com.smartinventorysystem.modules.user.dto.request.UserFilterRequest;
+import com.smartinventorysystem.modules.user.specification.UserSpecification;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.Clock;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -119,8 +126,49 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public PageResponse<UserResponse> getUsers(UserFilterRequest request) {
+        Pageable pageable = createPageable(request);
+        Specification<User> specification = UserSpecification.withFilters(request);
+
+        Page<User> userPage = userRepository.findAll(specification, pageable);
+        return PageResponse.of(userPage, userMapper::toResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<UserResponse> getAllUsers() {
         return userMapper.toResponseList(userRepository.findAll());
+    }
+
+    private Pageable createPageable(UserFilterRequest request) {
+        int page = (request != null && request.getPage() != null) ? request.getPage() : 0;
+        int size = (request != null && request.getSize() != null) ? request.getSize() : 10;
+
+        String sortBy = (request != null && request.getSortBy() != null) ? request.getSortBy() : "createdAt";
+        String sortDir = (request != null && request.getSortDir() != null) ? request.getSortDir() : "desc";
+
+        String targetProperty = mapSortProperty(sortBy);
+        Sort.Direction direction = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+
+        Sort sort = Sort.by(direction, targetProperty);
+        return PageRequest.of(page, size, sort);
+    }
+
+    private String mapSortProperty(String sortBy) {
+        if (sortBy == null) {
+            return "createdAt";
+        }
+        return switch (sortBy.trim().toLowerCase()) {
+            case "name", "fullname" -> "fullName";
+            case "email" -> "email";
+            case "role" -> "role";
+            case "status" -> "status";
+            case "date", "createdat" -> "createdAt";
+            case "updatedat" -> "updatedAt";
+            case "id", "userid" -> "userID";
+            default -> "createdAt";
+        };
     }
 
     @Override
@@ -183,13 +231,20 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Map<Integer, String> getUserFullNames(List<Integer> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
 
-        return userRepository.findAllById(userIds)
-                .stream()
-                .collect(Collectors.toMap(
-                        User::getUserID,
-                        User::getFullName
-                ));
+        Map<Integer, String> map = new HashMap<>();
+        userRepository.findAllById(userIds).forEach(user -> {
+            if (user.getUserID() != null) {
+                String name = user.getFullName() != null && !user.getFullName().isBlank()
+                        ? user.getFullName()
+                        : user.getEmail();
+                map.put(user.getUserID(), name != null ? name : "User #" + user.getUserID());
+            }
+        });
+        return map;
     }
 
 }

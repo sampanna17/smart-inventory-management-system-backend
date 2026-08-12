@@ -1,10 +1,12 @@
 package com.smartinventorysystem.modules.sale.controller;
 
 import com.smartinventorysystem.common.dto.ApiResponse;
+import com.smartinventorysystem.common.dto.PageResponse;
 import com.smartinventorysystem.constants.ApiRoutes;
 import com.smartinventorysystem.constants.MessageConstants;
 import com.smartinventorysystem.enums.SaleStatus;
 import com.smartinventorysystem.modules.sale.dto.request.CreateSaleRequest;
+import com.smartinventorysystem.modules.sale.dto.request.SaleFilterRequest;
 import com.smartinventorysystem.modules.sale.dto.request.UpdateSaleRequest;
 import com.smartinventorysystem.modules.sale.dto.request.UpdateSaleStatusRequest;
 import com.smartinventorysystem.modules.sale.dto.response.SaleResponse;
@@ -30,7 +32,6 @@ public class SaleController {
     private final Clock clock;
 
     @PostMapping(ApiRoutes.Sales.CREATE)
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<SaleResponse>> createSale(
             @Valid @RequestBody CreateSaleRequest request) {
 
@@ -48,7 +49,6 @@ public class SaleController {
     }
 
     @PutMapping(ApiRoutes.Sales.UPDATE)
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<SaleResponse>> updateSale(
             @PathVariable Integer saleId,
             @Valid @RequestBody UpdateSaleRequest request) {
@@ -67,7 +67,6 @@ public class SaleController {
     }
 
     @PatchMapping(ApiRoutes.Sales.UPDATE_STATUS)
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<SaleResponse>> updateSaleStatus(
             @PathVariable Integer saleId,
             @Valid @RequestBody UpdateSaleStatusRequest request) {
@@ -120,12 +119,13 @@ public class SaleController {
     }
 
     @GetMapping(ApiRoutes.Sales.GET_ALL)
-    public ResponseEntity<ApiResponse<List<SaleSummaryResponse>>> getAllSales() {
+    public ResponseEntity<ApiResponse<PageResponse<SaleSummaryResponse>>> getSales(
+            @Valid @ModelAttribute SaleFilterRequest filterRequest) {
 
-        List<SaleSummaryResponse> response = saleService.getAllSales();
+        PageResponse<SaleSummaryResponse> response = saleService.getSales(filterRequest);
 
         return ResponseEntity.ok(
-                ApiResponse.<List<SaleSummaryResponse>>builder()
+                ApiResponse.<PageResponse<SaleSummaryResponse>>builder()
                         .status(HttpStatus.OK.value())
                         .success(true)
                         .message(MessageConstants.SALE_FETCHED)

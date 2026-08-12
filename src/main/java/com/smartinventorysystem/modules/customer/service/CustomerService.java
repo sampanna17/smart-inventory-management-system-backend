@@ -1,6 +1,8 @@
 package com.smartinventorysystem.modules.customer.service;
 
+import com.smartinventorysystem.common.dto.PageResponse;
 import com.smartinventorysystem.modules.customer.dto.request.CreateCustomerRequest;
+import com.smartinventorysystem.modules.customer.dto.request.CustomerFilterRequest;
 import com.smartinventorysystem.modules.customer.dto.request.UpdateCustomerRequest;
 import com.smartinventorysystem.modules.customer.dto.response.CustomerResponse;
 
@@ -17,4 +19,6 @@ public interface CustomerService {
     CustomerResponse getCustomerById(Integer customerId);
 
     List<CustomerResponse> getAllCustomers();
+
+    PageResponse<CustomerResponse> getCustomers(CustomerFilterRequest request);
 }

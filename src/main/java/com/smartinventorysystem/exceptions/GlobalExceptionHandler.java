@@ -2,6 +2,7 @@ package com.smartinventorysystem.exceptions;
 
 import com.smartinventorysystem.common.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.DisabledException;
@@ -13,6 +14,7 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @RequiredArgsConstructor
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -100,11 +102,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGeneralException(Exception ex) {
-
+        log.error("Unhandled exception caught in GlobalExceptionHandler: ", ex);
         return buildResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "An unexpected error occurred",
-                List.of(ex.getMessage())
+                ex.getMessage() != null ? List.of(ex.getMessage()) : null
         );
     }
 

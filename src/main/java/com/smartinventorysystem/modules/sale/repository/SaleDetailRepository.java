@@ -17,7 +17,7 @@ public interface SaleDetailRepository extends JpaRepository<SaleDetail, Integer>
     @Query("SELECT sd FROM SaleDetail sd WHERE sd.sale.saleID = :saleId")
     List<SaleDetail> findBySaleIdWithProduct(@Param("saleId") Integer saleId);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("DELETE FROM SaleDetail sd WHERE sd.sale.saleID = :saleId")
     void deleteBySaleId(@Param("saleId") Integer saleId);
 

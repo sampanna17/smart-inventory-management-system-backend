@@ -1,7 +1,9 @@
 package com.smartinventorysystem.modules.sale.service;
 
+import com.smartinventorysystem.common.dto.PageResponse;
 import com.smartinventorysystem.enums.SaleStatus;
 import com.smartinventorysystem.modules.sale.dto.request.CreateSaleRequest;
+import com.smartinventorysystem.modules.sale.dto.request.SaleFilterRequest;
 import com.smartinventorysystem.modules.sale.dto.request.UpdateSaleRequest;
 import com.smartinventorysystem.modules.sale.dto.request.UpdateSaleStatusRequest;
 import com.smartinventorysystem.modules.sale.dto.response.SaleResponse;
@@ -21,6 +23,8 @@ public interface SaleService {
     SaleResponse getSale(Integer saleId);
 
     List<SaleSummaryResponse> getAllSales();
+
+    PageResponse<SaleSummaryResponse> getSales(SaleFilterRequest request);
 
     List<SaleSummaryResponse> getSalesByCustomer(Integer customerId);
 
