@@ -1,10 +1,12 @@
 package com.smartinventorysystem.modules.stockmovement.controller;
 
 import com.smartinventorysystem.common.dto.ApiResponse;
+import com.smartinventorysystem.common.dto.PageResponse;
 import com.smartinventorysystem.constants.ApiRoutes;
 import com.smartinventorysystem.constants.MessageConstants;
 import com.smartinventorysystem.enums.MovementType;
 import com.smartinventorysystem.modules.stockmovement.dto.request.CreateStockMovementRequest;
+import com.smartinventorysystem.modules.stockmovement.dto.request.StockMovementFilterRequest;
 import com.smartinventorysystem.modules.stockmovement.dto.response.StockMovementResponse;
 import com.smartinventorysystem.modules.stockmovement.service.StockMovementService;
 import jakarta.validation.Valid;
@@ -62,6 +64,23 @@ public class StockMovementController {
     }
 
     @GetMapping(ApiRoutes.StockMovements.GET_ALL)
+    public ResponseEntity<ApiResponse<PageResponse<StockMovementResponse>>> getStockMovements(
+            @Valid @ModelAttribute StockMovementFilterRequest filterRequest) {
+
+        PageResponse<StockMovementResponse> response = stockMovementService.getStockMovements(filterRequest);
+
+        return ResponseEntity.ok(
+                ApiResponse.<PageResponse<StockMovementResponse>>builder()
+                        .status(HttpStatus.OK.value())
+                        .success(true)
+                        .message(MessageConstants.STOCK_MOVEMENT_FETCHED)
+                        .data(response)
+                        .timestamp(LocalDateTime.now(clock))
+                        .build()
+        );
+    }
+
+    @GetMapping("/all")
     public ResponseEntity<ApiResponse<List<StockMovementResponse>>> getAllStockMovements() {
 
         List<StockMovementResponse> response = stockMovementService.getAllStockMovements();
