@@ -1,8 +1,10 @@
 package com.smartinventorysystem.modules.stockmovement.service;
 
+import com.smartinventorysystem.common.dto.PageResponse;
 import com.smartinventorysystem.enums.MovementType;
 import com.smartinventorysystem.modules.product.entity.Product;
 import com.smartinventorysystem.modules.stockmovement.dto.request.CreateStockMovementRequest;
+import com.smartinventorysystem.modules.stockmovement.dto.request.StockMovementFilterRequest;
 import com.smartinventorysystem.modules.stockmovement.dto.response.StockMovementResponse;
 
 import java.util.List;
@@ -14,6 +16,8 @@ public interface StockMovementService {
     StockMovementResponse getStockMovementById(Integer movementId);
 
     List<StockMovementResponse> getAllStockMovements();
+
+    PageResponse<StockMovementResponse> getStockMovements(StockMovementFilterRequest request);
 
     List<StockMovementResponse> getMovementsByProduct(Integer productId);
 

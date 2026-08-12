@@ -4,13 +4,16 @@ import com.smartinventorysystem.enums.MovementType;
 import com.smartinventorysystem.modules.stockmovement.entity.StockMovement;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface StockMovementRepository extends JpaRepository<StockMovement, Integer> {
+@Repository
+public interface StockMovementRepository extends JpaRepository<StockMovement, Integer>, JpaSpecificationExecutor<StockMovement> {
 
     @EntityGraph(attributePaths = {"product"})
     @Query("SELECT sm FROM StockMovement sm WHERE sm.movementID = :id")
