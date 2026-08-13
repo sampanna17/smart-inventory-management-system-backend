@@ -11,6 +11,10 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface StockMovementMapper {
 
+    @Mapping(target = "movementID", ignore = true)
+    @Mapping(target = "product", ignore = true)
+    @Mapping(target = "userID", ignore = true)
+    @Mapping(target = "movementDate", ignore = true)
     StockMovement toEntity(CreateStockMovementRequest request);
 
     @Mapping(source = "movementID", target = "movementId")

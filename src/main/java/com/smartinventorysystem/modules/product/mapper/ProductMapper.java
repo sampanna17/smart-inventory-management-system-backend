@@ -11,6 +11,11 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface ProductMapper {
 
+    @Mapping(target = "productId", ignore = true)
+    @Mapping(target = "category", ignore = true)
+    @Mapping(target = "unit", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     Product toEntity(CreateProductRequest request);
 
     @Mapping(source = "category.categoryId", target = "categoryId")
