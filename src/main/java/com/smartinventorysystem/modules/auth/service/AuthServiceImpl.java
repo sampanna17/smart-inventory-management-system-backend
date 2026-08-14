@@ -179,6 +179,18 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    public void verifyToken(String token) {
+        if (token == null || token.trim().isEmpty()) {
+            throw new BadRequestException("Token is required");
+        }
+        User user = userRepository.findByActivationToken(token.trim())
+                .orElseThrow(() -> new BadRequestException("Invalid or expired token"));
+        if (user.getTokenExpiry() == null || user.getTokenExpiry().isBefore(LocalDateTime.now(clock))) {
+            throw new BadRequestException("Token has expired");
+        }
+    }
+
+    @Override
     public AuthResponse authenticateGoogleUser(String idTokenString) {
         try {
             GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())

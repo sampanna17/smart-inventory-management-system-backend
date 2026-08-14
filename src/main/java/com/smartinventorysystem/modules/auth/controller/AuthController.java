@@ -149,4 +149,17 @@ public class AuthController {
         );
     }
 
+    @GetMapping(ApiRoutes.Auth.VERIFY_TOKEN)
+    public ResponseEntity<ApiResponse<Void>> verifyToken(@RequestParam("token") String token) {
+        authService.verifyToken(token);
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder()
+                        .status(HttpStatus.OK.value())
+                        .success(true)
+                        .message("Token is valid.")
+                        .timestamp(LocalDateTime.now(clock))
+                        .build()
+        );
+    }
+
 }

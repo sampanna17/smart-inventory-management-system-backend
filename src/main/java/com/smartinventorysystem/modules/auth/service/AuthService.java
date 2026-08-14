@@ -19,6 +19,8 @@ public interface AuthService {
 
     void resetPassword(ResetPasswordRequest request);
 
+    void verifyToken(String token);
+
     AuthResponse authenticateGoogleUser(String idTokenString);
 
 }
