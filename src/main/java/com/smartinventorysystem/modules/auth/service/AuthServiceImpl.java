@@ -122,7 +122,7 @@ public class AuthServiceImpl implements AuthService {
     public void resendActivationLink(ResendActivationRequest request) {
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new BadRequestException(MessageConstants.UNIT_NOT_FOUND));
+                .orElseThrow(() -> new BadRequestException(MessageConstants.USER_NOT_FOUND));
 
         if (user.getStatus() == Status.ACTIVE) {
             throw new BadRequestException("Account is already activated");
