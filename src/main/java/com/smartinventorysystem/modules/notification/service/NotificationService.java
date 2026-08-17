@@ -14,6 +14,19 @@ public interface NotificationService {
             NotificationType type
     );
 
+    void notifyUserAndAdmins(
+            Integer userId,
+            String title,
+            String message,
+            NotificationType type
+    );
+
+    void notifyAdmins(
+            String title,
+            String message,
+            NotificationType type
+    );
+
     List<NotificationResponse> getAllNotificationsForCurrentUser();
 
     NotificationResponse markNotificationAsRead(

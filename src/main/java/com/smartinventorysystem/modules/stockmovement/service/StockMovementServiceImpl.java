@@ -28,6 +28,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.smartinventorysystem.enums.NotificationType;
+import com.smartinventorysystem.modules.notification.service.NotificationService;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -45,6 +47,7 @@ public class StockMovementServiceImpl implements StockMovementService {
     private final StockMovementMapper stockMovementMapper;
     private final Clock clock;
     private final AuthenticatedUserProvider authenticatedUserProvider;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -73,6 +76,26 @@ public class StockMovementServiceImpl implements StockMovementService {
         } else if (request.getMovementType() == MovementType.ADJUSTMENT) {
             product.setStockQuantity(currentStock + request.getQuantity());
             productRepository.save(product);
+        }
+
+        // Check stock thresholds if stock decreased
+        if (request.getMovementType() == MovementType.SALE || request.getMovementType() == MovementType.ADJUSTMENT) {
+            int remainingStock = product.getStockQuantity() != null ? product.getStockQuantity() : 0;
+            if (remainingStock <= 0) {
+                notificationService.notifyUserAndAdmins(
+                        authenticatedUser.getUserID(),
+                        "Out of Stock Alert",
+                        "Product '" + product.getProductName() + "' is out of stock (Quantity: 0).",
+                        NotificationType.OUT_OF_STOCK
+                );
+            } else if (product.getReorderLevel() != null && remainingStock <= product.getReorderLevel()) {
+                notificationService.notifyUserAndAdmins(
+                        authenticatedUser.getUserID(),
+                        "Low Stock Alert",
+                        "Product '" + product.getProductName() + "' is running low on stock (Remaining: " + remainingStock + ", Reorder Level: " + product.getReorderLevel() + ").",
+                        NotificationType.LOW_STOCK
+                );
+            }
         }
 
         StockMovement stockMovement = new StockMovement();

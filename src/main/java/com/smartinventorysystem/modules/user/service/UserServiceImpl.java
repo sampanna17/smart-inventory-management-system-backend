@@ -26,6 +26,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.smartinventorysystem.enums.NotificationType;
+import com.smartinventorysystem.modules.notification.service.NotificationService;
+import com.smartinventorysystem.utils.AuthenticatedUserProvider;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -38,6 +41,8 @@ public class UserServiceImpl implements UserService {
     private final EmailService emailService;
     private final UserMapper userMapper;
     private final Clock clock;
+    private final AuthenticatedUserProvider authenticatedUserProvider;
+    private final NotificationService notificationService;
 
     @Override
     public CreateStaffResponse createStaff(CreateStaffRequest request) {
@@ -65,6 +70,14 @@ public class UserServiceImpl implements UserService {
                 savedStaff.getEmail(),
                 savedStaff.getFullName(),
                 token
+        );
+
+        Integer currentAdminId = authenticatedUserProvider.getCurrentUserId();
+        notificationService.notifyUserAndAdmins(
+                currentAdminId,
+                "Staff Account Created",
+                "Staff account for " + savedStaff.getFullName() + " (" + savedStaff.getEmail() + ") was successfully created.",
+                NotificationType.STAFF_ACCOUNT_CREATED
         );
 
         return userMapper.toCreateStaffResponse(savedStaff);

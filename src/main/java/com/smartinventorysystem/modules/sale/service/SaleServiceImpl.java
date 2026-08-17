@@ -28,6 +28,8 @@ import com.smartinventorysystem.modules.user.service.UserService;
 import com.smartinventorysystem.common.dto.PageResponse;
 import com.smartinventorysystem.modules.sale.dto.request.SaleFilterRequest;
 import com.smartinventorysystem.modules.sale.specification.SaleSpecification;
+import com.smartinventorysystem.enums.NotificationType;
+import com.smartinventorysystem.modules.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import com.smartinventorysystem.utils.AuthenticatedUserProvider;
 import org.springframework.data.domain.Page;
@@ -64,6 +66,7 @@ public class SaleServiceImpl implements SaleService {
     private final SaleMapper saleMapper;
     private final Clock clock;
     private final AuthenticatedUserProvider authenticatedUserProvider;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -111,6 +114,35 @@ public class SaleServiceImpl implements SaleService {
         sale.setTotalAmount(totalAmount);
         Sale savedSale = saleRepository.save(sale);
         List<SaleDetail> savedDetails = saleDetailRepository.saveAll(details);
+
+        // Notify user and admins of sale order placement
+        notificationService.notifyUserAndAdmins(
+                user.getUserID(),
+                "Sales Order Placed",
+                "Sales invoice " + savedSale.getInvoiceNumber() + " for NPR " + totalAmount + " has been placed.",
+                NotificationType.ORDER_PLACED
+        );
+
+        // Check stock thresholds for LOW_STOCK and OUT_OF_STOCK alerts
+        for (SaleDetail detail : savedDetails) {
+            Product product = detail.getProduct();
+            int remainingStock = product.getStockQuantity() != null ? product.getStockQuantity() : 0;
+            if (remainingStock <= 0) {
+                notificationService.notifyUserAndAdmins(
+                        user.getUserID(),
+                        "Out of Stock Alert",
+                        "Product '" + product.getProductName() + "' is out of stock (Quantity: 0).",
+                        NotificationType.OUT_OF_STOCK
+                );
+            } else if (product.getReorderLevel() != null && remainingStock <= product.getReorderLevel()) {
+                notificationService.notifyUserAndAdmins(
+                        user.getUserID(),
+                        "Low Stock Alert",
+                        "Product '" + product.getProductName() + "' is running low on stock (Remaining: " + remainingStock + ", Reorder Level: " + product.getReorderLevel() + ").",
+                        NotificationType.LOW_STOCK
+                );
+            }
+        }
 
         SaleResponse response = saleMapper.toResponse(savedSale, savedDetails);
         response.setUserName(user.getFullName());
