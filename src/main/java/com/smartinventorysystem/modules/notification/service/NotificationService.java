@@ -26,6 +26,8 @@ public interface NotificationService {
             Integer notificationId
     );
 
+    void deleteAllNotifications();
+
     long getUnreadNotificationCount();
 
 }

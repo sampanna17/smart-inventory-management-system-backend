@@ -98,6 +98,22 @@ public class NotificationController {
 		);
 	}
 
+	@DeleteMapping(ApiRoutes.Notifications.DELETE_ALL)
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<ApiResponse<Void>> deleteAllNotifications() {
+
+		notificationService.deleteAllNotifications();
+
+		return ResponseEntity.ok(
+				ApiResponse.<Void>builder()
+						.status(HttpStatus.OK.value())
+						.success(true)
+						.message("All notifications deleted successfully")
+						.timestamp(LocalDateTime.now(clock))
+						.build()
+		);
+	}
+
 	@GetMapping(ApiRoutes.Notifications.UNREAD_COUNT)
 	@PreAuthorize("isAuthenticated()")
 	public ResponseEntity<ApiResponse<Long>> getUnreadNotificationCount() {

@@ -19,4 +19,6 @@ public interface NotificationRepository  extends JpaRepository<Notification, Int
     long countByUserIDAndIsReadFalse(Integer userID);
 
     List<Notification> findTop10ByUserIDOrderByCreatedAtDesc(Integer userID);
+
+    void deleteAllByUserID(Integer userID);
 }

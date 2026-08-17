@@ -169,6 +169,7 @@ public final class ApiRoutes {
         public static final String MARK_AS_READ = "/{notificationId}/read";
         public static final String MARK_ALL_AS_READ = "/read-all";
         public static final String DELETE = "/{notificationId}";
+        public static final String DELETE_ALL = "/delete-all";
         public static final String UNREAD_COUNT = "/unread-count";
 
         private Notifications() {}

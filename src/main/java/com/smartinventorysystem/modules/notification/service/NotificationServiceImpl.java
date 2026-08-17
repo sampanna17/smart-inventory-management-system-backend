@@ -161,6 +161,17 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    @Transactional
+    public void deleteAllNotifications(){
+
+        Integer currentUserId =
+                authenticatedUserProvider.getCurrentUserId();
+
+        notificationRepository.deleteAllByUserID(currentUserId);
+
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public long getUnreadNotificationCount(){
 
