@@ -53,6 +53,7 @@ import java.security.SecureRandom;
 
 @Service
 @RequiredArgsConstructor
+@Transactional("simsTransactionManager")
 public class SaleServiceImpl implements SaleService {
 
     private static final SecureRandom RANDOM = new SecureRandom();

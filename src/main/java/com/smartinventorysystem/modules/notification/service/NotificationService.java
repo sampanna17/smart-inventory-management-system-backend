@@ -5,7 +5,11 @@ import com.smartinventorysystem.modules.notification.dto.response.NotificationRe
 
 import java.util.List;
 
+import com.smartinventorysystem.modules.notification.dto.request.CreateNotificationRequest;
+
 public interface NotificationService {
+
+    NotificationResponse createNotification(CreateNotificationRequest request);
 
     void createNotification(
             Integer userId,
@@ -26,6 +30,8 @@ public interface NotificationService {
             String message,
             NotificationType type
     );
+
+    void broadcastNotification(CreateNotificationRequest request);
 
     List<NotificationResponse> getAllNotificationsForCurrentUser();
 

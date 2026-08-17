@@ -165,6 +165,8 @@ public final class ApiRoutes {
     public static final class Notifications {
         public static final String BASE = API + "/notifications";
 
+        public static final String CREATE = "/create";
+        public static final String BROADCAST = "/broadcast";
         public static final String GET_ALL = "";
         public static final String MARK_AS_READ = "/{notificationId}/read";
         public static final String MARK_ALL_AS_READ = "/read-all";

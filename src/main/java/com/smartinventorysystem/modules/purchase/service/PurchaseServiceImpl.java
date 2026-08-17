@@ -43,6 +43,7 @@ import java.util.*;
 
 @Service
 @RequiredArgsConstructor
+@Transactional("simsTransactionManager")
 public class PurchaseServiceImpl implements PurchaseService {
 
     private final PurchaseRepository purchaseRepository;
