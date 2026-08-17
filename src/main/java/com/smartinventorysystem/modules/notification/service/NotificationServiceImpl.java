@@ -19,6 +19,13 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.smartinventorysystem.enums.Role;
+import java.util.HashSet;
+import java.util.Set;
+
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
@@ -31,39 +38,83 @@ public class NotificationServiceImpl implements NotificationService {
     private final Clock clock;
 
     @Override
-    @Transactional
+    @Transactional("simsTransactionManager")
     public void createNotification(
             Integer userId,
             String title,
             String message,
             NotificationType type) {
 
+        if (userId == null) {
+            return;
+        }
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                MessageConstants.USER_NOT_FOUND_WITH_ID + userId
-                        )
+        try {
+            Notification notification = new Notification();
+            notification.setUserID(userId);
+            notification.setTitle(title);
+            notification.setMessage(message);
+            notification.setType(type);
+            notification.setIsRead(false);
+            notification.setCreatedAt(LocalDateTime.now(clock));
+
+            Notification savedNotification = notificationRepository.save(notification);
+
+            try {
+                simpMessagingTemplate.convertAndSend(
+                        "/topic/notifications/" + userId,
+                        notificationMapper.toResponse(savedNotification)
                 );
+            } catch (Exception ex) {
+                log.warn("WebSocket push failed for user {}: {}", userId, ex.getMessage());
+            }
+        } catch (Exception ex) {
+            log.error("Failed to save notification for user {}: {}", userId, ex.getMessage(), ex);
+        }
+    }
 
-        Notification notification = new Notification();
+    @Override
+    public void notifyUserAndAdmins(
+            Integer userId,
+            String title,
+            String message,
+            NotificationType type) {
+        try {
+            Set<Integer> targetUserIds = new HashSet<>();
+            if (userId != null) {
+                targetUserIds.add(userId);
+            }
+            try {
+                List<User> admins = userRepository.findByRole(Role.ADMIN);
+                if (admins != null) {
+                    admins.forEach(admin -> targetUserIds.add(admin.getUserID()));
+                }
+            } catch (Exception e) {
+                log.warn("Could not query admin list for notifications: {}", e.getMessage());
+            }
+            for (Integer targetId : targetUserIds) {
+                createNotification(targetId, title, message, type);
+            }
+        } catch (Exception ex) {
+            log.error("Error in notifyUserAndAdmins: {}", ex.getMessage(), ex);
+        }
+    }
 
-        notification.setUserID(user.getUserID());
-        notification.setTitle(title);
-        notification.setMessage(message);
-        notification.setType(type);
-        notification.setIsRead(false);
-        notification.setCreatedAt(
-                LocalDateTime.now(clock)
-        );
-
-        Notification savedNotification =
-                notificationRepository.save(notification);
-
-        simpMessagingTemplate.convertAndSend(
-                "/topic/notifications/" + user.getUserID(),
-                notificationMapper.toResponse(savedNotification)
-        );
+    @Override
+    public void notifyAdmins(
+            String title,
+            String message,
+            NotificationType type) {
+        try {
+            List<User> admins = userRepository.findByRole(Role.ADMIN);
+            if (admins != null) {
+                for (User admin : admins) {
+                    createNotification(admin.getUserID(), title, message, type);
+                }
+            }
+        } catch (Exception ex) {
+            log.error("Error in notifyAdmins: {}", ex.getMessage(), ex);
+        }
     }
 
     @Override

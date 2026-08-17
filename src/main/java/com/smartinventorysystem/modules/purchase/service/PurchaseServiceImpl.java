@@ -22,6 +22,8 @@ import com.smartinventorysystem.modules.user.entity.User;
 import com.smartinventorysystem.modules.user.service.UserService;
 import com.smartinventorysystem.common.dto.PageResponse;
 import com.smartinventorysystem.enums.MovementType;
+import com.smartinventorysystem.enums.NotificationType;
+import com.smartinventorysystem.modules.notification.service.NotificationService;
 import com.smartinventorysystem.modules.purchase.dto.request.PurchaseFilterRequest;
 import com.smartinventorysystem.modules.purchase.specification.PurchaseSpecification;
 import lombok.RequiredArgsConstructor;
@@ -52,6 +54,7 @@ public class PurchaseServiceImpl implements PurchaseService {
     private final PurchaseMapper purchaseMapper;
     private final Clock clock;
     private final AuthenticatedUserProvider authenticatedUserProvider;
+    private final NotificationService notificationService;
 
     private static final String PURCHASE_NOT_FOUND = "Purchase not found with ID: ";
 
@@ -101,6 +104,13 @@ public class PurchaseServiceImpl implements PurchaseService {
         purchase.setTotalAmount(totalAmount);
 
         Purchase savedPurchase = purchaseRepository.save(purchase);
+
+        notificationService.notifyUserAndAdmins(
+                user.getUserID(),
+                "Purchase Order Placed",
+                "Purchase order " + savedPurchase.getPurchaseNumber() + " for NPR " + totalAmount + " has been placed.",
+                NotificationType.ORDER_PLACED
+        );
 
         PurchaseResponse response = purchaseMapper.toResponse(savedPurchase);
         response.setUserName(user.getFullName());
@@ -359,6 +369,15 @@ public class PurchaseServiceImpl implements PurchaseService {
         purchase.setUpdatedAt(LocalDateTime.now(clock));
 
         Purchase updatedPurchase = purchaseRepository.save(purchase);
+
+        if (newStatus == PurchaseStatus.RECEIVED) {
+            notificationService.notifyUserAndAdmins(
+                    purchase.getUserID(),
+                    "Purchase Order Received",
+                    "Purchase order " + purchase.getPurchaseNumber() + " items have been received into inventory.",
+                    NotificationType.GENERAL
+            );
+        }
 
         PurchaseResponse response = purchaseMapper.toResponse(updatedPurchase);
 
