@@ -22,6 +22,11 @@ import com.smartinventorysystem.modules.notification.service.NotificationService
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import jakarta.validation.Valid;
+import com.smartinventorysystem.modules.notification.dto.request.CreateNotificationRequest;
+
 @RestController
 @RequestMapping(ApiRoutes.Notifications.BASE)
 @RequiredArgsConstructor
@@ -29,6 +34,41 @@ public class NotificationController {
 
 	private final NotificationService notificationService;
 	private final Clock clock;
+
+	@PostMapping(ApiRoutes.Notifications.CREATE)
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<ApiResponse<NotificationResponse>> createNotification(
+			@Valid @RequestBody CreateNotificationRequest request) {
+
+		NotificationResponse response = notificationService.createNotification(request);
+
+		return ResponseEntity.status(HttpStatus.CREATED).body(
+				ApiResponse.<NotificationResponse>builder()
+						.status(HttpStatus.CREATED.value())
+						.success(true)
+						.message("Notification created successfully")
+						.data(response)
+						.timestamp(LocalDateTime.now(clock))
+						.build()
+		);
+	}
+
+	@PostMapping(ApiRoutes.Notifications.BROADCAST)
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<ApiResponse<Void>> broadcastNotification(
+			@Valid @RequestBody CreateNotificationRequest request) {
+
+		notificationService.broadcastNotification(request);
+
+		return ResponseEntity.status(HttpStatus.CREATED).body(
+				ApiResponse.<Void>builder()
+						.status(HttpStatus.CREATED.value())
+						.success(true)
+						.message("Notification broadcasted successfully")
+						.timestamp(LocalDateTime.now(clock))
+						.build()
+		);
+	}
 
 	@GetMapping(ApiRoutes.Notifications.GET_ALL)
 	@PreAuthorize("isAuthenticated()")

@@ -1,6 +1,5 @@
 package com.smartinventorysystem.modules.notification.service;
 
-import com.smartinventorysystem.constants.MessageConstants;
 import com.smartinventorysystem.enums.NotificationType;
 import com.smartinventorysystem.modules.notification.dto.response.NotificationResponse;
 import com.smartinventorysystem.modules.notification.entity.Notification;
@@ -23,11 +22,13 @@ import com.smartinventorysystem.enums.Role;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.smartinventorysystem.modules.notification.dto.request.CreateNotificationRequest;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional("simsTransactionManager")
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
@@ -36,6 +37,49 @@ public class NotificationServiceImpl implements NotificationService {
     private final AuthenticatedUserProvider authenticatedUserProvider;
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final Clock clock;
+
+    @Override
+    @Transactional("simsTransactionManager")
+    public NotificationResponse createNotification(CreateNotificationRequest request) {
+        Integer targetUserId = request.getUserId() != null
+                ? request.getUserId()
+                : authenticatedUserProvider.getCurrentUserId();
+
+        Notification notification = new Notification();
+        notification.setUserID(targetUserId);
+        notification.setTitle(request.getTitle());
+        notification.setMessage(request.getMessage());
+        notification.setType(request.getType());
+        notification.setIsRead(false);
+        notification.setCreatedAt(LocalDateTime.now(clock));
+
+        Notification savedNotification = notificationRepository.saveAndFlush(notification);
+        log.info("Notification successfully inserted in DB with ID: {} for user: {}", savedNotification.getNotificationID(), targetUserId);
+        NotificationResponse response = notificationMapper.toResponse(savedNotification);
+
+        try {
+            simpMessagingTemplate.convertAndSend(
+                    "/topic/notifications/" + targetUserId,
+                    response);
+        } catch (Exception ex) {
+            log.warn("WebSocket push failed for user {}: {}", targetUserId, ex.getMessage());
+        }
+
+        return response;
+    }
+
+    @Override
+    @Transactional("simsTransactionManager")
+    public void broadcastNotification(CreateNotificationRequest request) {
+        try {
+            List<User> allUsers = userRepository.findAll();
+            for (User user : allUsers) {
+                createNotification(user.getUserID(), request.getTitle(), request.getMessage(), request.getType());
+            }
+        } catch (Exception ex) {
+            log.error("Failed to broadcast notification: {}", ex.getMessage(), ex);
+        }
+    }
 
     @Override
     @Transactional("simsTransactionManager")
@@ -58,13 +102,13 @@ public class NotificationServiceImpl implements NotificationService {
             notification.setIsRead(false);
             notification.setCreatedAt(LocalDateTime.now(clock));
 
-            Notification savedNotification = notificationRepository.save(notification);
+            Notification savedNotification = notificationRepository.saveAndFlush(notification);
+            log.info("Notification successfully inserted in DB with ID: {} for user: {}", savedNotification.getNotificationID(), userId);
 
             try {
                 simpMessagingTemplate.convertAndSend(
                         "/topic/notifications/" + userId,
-                        notificationMapper.toResponse(savedNotification)
-                );
+                        notificationMapper.toResponse(savedNotification));
             } catch (Exception ex) {
                 log.warn("WebSocket push failed for user {}: {}", userId, ex.getMessage());
             }
@@ -74,6 +118,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    @Transactional("simsTransactionManager")
     public void notifyUserAndAdmins(
             Integer userId,
             String title,
@@ -101,6 +146,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    @Transactional("simsTransactionManager")
     public void notifyAdmins(
             String title,
             String message,
@@ -119,68 +165,54 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<NotificationResponse> getAllNotificationsForCurrentUser(){
+    public List<NotificationResponse> getAllNotificationsForCurrentUser() {
 
-        Integer currentUserId =
-                authenticatedUserProvider.getCurrentUserId();
+        Integer currentUserId = authenticatedUserProvider.getCurrentUserId();
 
         return notificationMapper.toResponseList(
                 notificationRepository
-                        .findAllByUserIDOrderByCreatedAtDesc(currentUserId)
-        );
+                        .findAllByUserIDOrderByCreatedAtDesc(currentUserId));
 
     }
 
     @Override
     @Transactional
     public NotificationResponse markNotificationAsRead(
-            Integer notificationId){
+            Integer notificationId) {
 
-        Integer currentUserId =
-                authenticatedUserProvider.getCurrentUserId();
+        Integer currentUserId = authenticatedUserProvider.getCurrentUserId();
 
-        Notification notification =
-                notificationRepository
-                        .findByNotificationIDAndUserID(
-                                notificationId,
-                                currentUserId
-                        )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Notification not found with ID: "
-                                                + notificationId
-                                )
-                        );
+        Notification notification = notificationRepository
+                .findByNotificationIDAndUserID(
+                        notificationId,
+                        currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Notification not found with ID: "
+                                + notificationId));
 
         notification.setIsRead(true);
 
         return notificationMapper.toResponse(
-                notificationRepository.save(notification)
-        );
+                notificationRepository.save(notification));
 
     }
 
     @Override
     @Transactional
-    public void markAllNotificationsAsRead(){
+    public void markAllNotificationsAsRead() {
 
-        Integer currentUserId =
-                authenticatedUserProvider.getCurrentUserId();
+        Integer currentUserId = authenticatedUserProvider.getCurrentUserId();
 
-        List<Notification> notifications =
-                notificationRepository
-                        .findByUserIDAndIsReadFalseOrderByCreatedAtDesc(
-                                currentUserId
-                        );
+        List<Notification> notifications = notificationRepository
+                .findByUserIDAndIsReadFalseOrderByCreatedAtDesc(
+                        currentUserId);
 
-        if(notifications.isEmpty()){
+        if (notifications.isEmpty()) {
             return;
         }
 
         notifications.forEach(
-                notification ->
-                        notification.setIsRead(true)
-        );
+                notification -> notification.setIsRead(true));
 
         notificationRepository.saveAll(notifications);
 
@@ -189,23 +221,17 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional
     public void deleteNotification(
-            Integer notificationId){
+            Integer notificationId) {
 
-        Integer currentUserId =
-                authenticatedUserProvider.getCurrentUserId();
+        Integer currentUserId = authenticatedUserProvider.getCurrentUserId();
 
-        Notification notification =
-                notificationRepository
-                        .findByNotificationIDAndUserID(
-                                notificationId,
-                                currentUserId
-                        )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Notification not found with ID: "
-                                                + notificationId
-                                )
-                        );
+        Notification notification = notificationRepository
+                .findByNotificationIDAndUserID(
+                        notificationId,
+                        currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Notification not found with ID: "
+                                + notificationId));
 
         notificationRepository.delete(notification);
 
@@ -213,10 +239,9 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
-    public void deleteAllNotifications(){
+    public void deleteAllNotifications() {
 
-        Integer currentUserId =
-                authenticatedUserProvider.getCurrentUserId();
+        Integer currentUserId = authenticatedUserProvider.getCurrentUserId();
 
         notificationRepository.deleteAllByUserID(currentUserId);
 
@@ -224,15 +249,13 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional(readOnly = true)
-    public long getUnreadNotificationCount(){
+    public long getUnreadNotificationCount() {
 
-        Integer currentUserId =
-                authenticatedUserProvider.getCurrentUserId();
+        Integer currentUserId = authenticatedUserProvider.getCurrentUserId();
 
         return notificationRepository
                 .countByUserIDAndIsReadFalse(
-                        currentUserId
-                );
+                        currentUserId);
 
     }
 }

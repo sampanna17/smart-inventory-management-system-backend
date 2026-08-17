@@ -38,6 +38,7 @@ import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
+@Transactional("simsTransactionManager")
 public class StockMovementServiceImpl implements StockMovementService {
 
     private final StockMovementRepository stockMovementRepository;
