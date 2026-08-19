@@ -2,7 +2,7 @@ package com.smartinventorysystem.modules.unit.service;
 
 import com.smartinventorysystem.common.dto.PageResponse;
 import com.smartinventorysystem.constants.MessageConstants;
-import com.smartinventorysystem.exceptions.DuplicateUnitException;
+import com.smartinventorysystem.exceptions.DuplicateResourceException;
 import com.smartinventorysystem.exceptions.ResourceNotFoundException;
 import com.smartinventorysystem.modules.unit.dto.request.CreateUnitRequest;
 import com.smartinventorysystem.modules.unit.dto.request.UnitFilterRequest;
@@ -35,7 +35,7 @@ public class UnitServiceImpl implements UnitService {
     public UnitResponse createUnit(CreateUnitRequest request) {
 
         if (unitRepository.existsByUnitName(request.getUnitName())) {
-            throw new DuplicateUnitException("Unit already exists with name: " + request.getUnitName());
+            throw new DuplicateResourceException("Unit already exists with name: " + request.getUnitName());
         }
 
         Unit unit = unitMapper.toEntity(request);

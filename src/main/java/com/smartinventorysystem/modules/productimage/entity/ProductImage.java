@@ -2,11 +2,17 @@ package com.smartinventorysystem.modules.productimage.entity;
 
 import com.smartinventorysystem.modules.product.entity.Product;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "Product_Images")
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class ProductImage {
 
     @Id

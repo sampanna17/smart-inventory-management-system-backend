@@ -3,14 +3,20 @@ package com.smartinventorysystem.modules.sale.entity;
 import com.smartinventorysystem.enums.SaleStatus;
 import com.smartinventorysystem.modules.customer.entity.Customer;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "Sales")
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Sale {
 
     @Id

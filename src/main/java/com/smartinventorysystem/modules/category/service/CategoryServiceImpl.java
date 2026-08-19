@@ -2,7 +2,7 @@ package com.smartinventorysystem.modules.category.service;
 
 import com.smartinventorysystem.common.dto.PageResponse;
 import com.smartinventorysystem.constants.MessageConstants;
-import com.smartinventorysystem.exceptions.DuplicateCategoryException;
+import com.smartinventorysystem.exceptions.DuplicateResourceException;
 import com.smartinventorysystem.exceptions.ResourceNotFoundException;
 import com.smartinventorysystem.modules.category.dto.request.CategoryFilterRequest;
 import com.smartinventorysystem.modules.category.dto.request.CreateCategoryRequest;
@@ -38,7 +38,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryResponse createCategory(CreateCategoryRequest request) {
 
         if (categoryRepository.existsByCategoryName(request.getCategoryName())) {
-            throw new DuplicateCategoryException("Category already exists with name: " + request.getCategoryName());
+            throw new DuplicateResourceException("Category already exists with name: " + request.getCategoryName());
         }
 
         Category category = categoryMapper.toEntity(request);
@@ -60,7 +60,7 @@ public class CategoryServiceImpl implements CategoryService {
                     request.getCategoryName(),
                     id
             )) {
-                throw new DuplicateCategoryException(
+                throw new DuplicateResourceException(
                         "Category already exists with name: " + request.getCategoryName()
                 );
             }
