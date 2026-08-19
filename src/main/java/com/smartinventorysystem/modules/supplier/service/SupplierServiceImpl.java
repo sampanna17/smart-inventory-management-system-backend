@@ -2,7 +2,7 @@ package com.smartinventorysystem.modules.supplier.service;
 
 import com.smartinventorysystem.common.dto.PageResponse;
 import com.smartinventorysystem.constants.MessageConstants;
-import com.smartinventorysystem.exceptions.DuplicateSupplierException;
+import com.smartinventorysystem.exceptions.DuplicateResourceException;
 import com.smartinventorysystem.exceptions.ResourceNotFoundException;
 import com.smartinventorysystem.modules.supplier.dto.request.CreateSupplierRequest;
 import com.smartinventorysystem.modules.supplier.dto.request.SupplierFilterRequest;
@@ -38,15 +38,15 @@ public class SupplierServiceImpl implements SupplierService {
     public SupplierResponse createSupplier(CreateSupplierRequest request) {
 
         if (supplierRepository.existsBySupplierName(request.getSupplierName())) {
-            throw new DuplicateSupplierException("Supplier already exists with name: " + request.getSupplierName());
+            throw new DuplicateResourceException("Supplier already exists with name: " + request.getSupplierName());
         }
 
         if (request.getEmail() != null && supplierRepository.existsByEmail(request.getEmail())) {
-            throw new DuplicateSupplierException("Supplier already exists with email: " + request.getEmail());
+            throw new DuplicateResourceException("Supplier already exists with email: " + request.getEmail());
         }
 
         if (request.getPhone() != null && supplierRepository.existsByPhone(request.getPhone())) {
-            throw new DuplicateSupplierException("Supplier already exists with Phone: " + request.getPhone());
+            throw new DuplicateResourceException("Supplier already exists with Phone: " + request.getPhone());
         }
 
         Supplier supplier = supplierMapper.toEntity(request);
@@ -68,7 +68,7 @@ public class SupplierServiceImpl implements SupplierService {
             if (supplierRepository.existsBySupplierNameAndSupplierIdNot(
                     request.getSupplierName(), supplierId)) {
 
-                throw new DuplicateSupplierException(
+                throw new DuplicateResourceException(
                         "Supplier already exists with name: " + request.getSupplierName()
                 );
             }
@@ -82,7 +82,7 @@ public class SupplierServiceImpl implements SupplierService {
             if (supplierRepository.existsByEmailAndSupplierIdNot(
                     request.getEmail(), supplierId)) {
 
-                throw new DuplicateSupplierException(
+                throw new DuplicateResourceException(
                         "Supplier already exists with email: " + request.getEmail()
                 );
             }
@@ -96,7 +96,7 @@ public class SupplierServiceImpl implements SupplierService {
             if (supplierRepository.existsByPhoneAndSupplierIdNot(
                     request.getPhone(), supplierId)) {
 
-                throw new DuplicateSupplierException(
+                throw new DuplicateResourceException(
                         "Supplier already exists with phone: " + request.getPhone()
                 );
             }

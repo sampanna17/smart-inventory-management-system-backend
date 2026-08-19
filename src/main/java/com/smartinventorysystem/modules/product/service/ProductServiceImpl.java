@@ -2,7 +2,7 @@ package com.smartinventorysystem.modules.product.service;
 
 import com.smartinventorysystem.common.dto.PageResponse;
 import com.smartinventorysystem.constants.MessageConstants;
-import com.smartinventorysystem.exceptions.DuplicateProductException;
+import com.smartinventorysystem.exceptions.DuplicateResourceException;
 import com.smartinventorysystem.exceptions.ResourceNotFoundException;
 import com.smartinventorysystem.modules.category.entity.Category;
 import com.smartinventorysystem.modules.category.repository.CategoryRepository;
@@ -41,7 +41,7 @@ public class ProductServiceImpl implements ProductService {
     public ProductResponse createProduct(CreateProductRequest request) {
 
         if (productRepository.existsByProductName(request.getProductName())) {
-            throw new DuplicateProductException(
+            throw new DuplicateResourceException(
                     "Product already exists with name: " + request.getProductName());
         }
 
@@ -86,7 +86,7 @@ public class ProductServiceImpl implements ProductService {
             if (productRepository.existsByProductNameAndProductIdNot(
                     request.getProductName(), productId)) {
 
-                throw new DuplicateProductException(
+                throw new DuplicateResourceException(
                         "Product already exists with name: " + request.getProductName());
             }
 

@@ -3,11 +3,17 @@ package com.smartinventorysystem.modules.productsupplier.entity;
 import com.smartinventorysystem.modules.product.entity.Product;
 import com.smartinventorysystem.modules.supplier.entity.Supplier;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "product_suppliers")
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class ProductSupplier {
 
     @EmbeddedId

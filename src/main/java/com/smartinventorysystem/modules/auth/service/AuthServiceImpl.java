@@ -5,7 +5,6 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 import com.smartinventorysystem.common.email.EmailService;
-import com.smartinventorysystem.common.email.ResetPasswordEmailService;
 import com.smartinventorysystem.constants.MessageConstants;
 import com.smartinventorysystem.enums.Role;
 import com.smartinventorysystem.enums.Status;
@@ -45,8 +44,6 @@ public class AuthServiceImpl implements AuthService {
     private final TokenBlacklist tokenBlacklist;
     private final Clock clock;
     private final EmailService emailService;
-    private final ResetPasswordEmailService resetPasswordEmailService;
-
 
 
     @Override
@@ -139,8 +136,7 @@ public class AuthServiceImpl implements AuthService {
         emailService.sendStaffAccountCreatedEmail(
                 user.getEmail(),
                 user.getFullName(),
-                token
-        );
+                token);
     }
 
     @Override
@@ -154,12 +150,12 @@ public class AuthServiceImpl implements AuthService {
         user.setTokenExpiry(LocalDateTime.now(clock).plusHours(24));
         user.setUpdatedAt(LocalDateTime.now(clock));
         userRepository.save(user);
-        resetPasswordEmailService.sendResetPasswordEmail(
+        emailService.sendResetPasswordEmail(
                 user.getEmail(),
                 user.getFullName(),
-                token
-        );
+                token);
     }
+
     @Override
     @Transactional
     public void resetPassword(ResetPasswordRequest request) {
@@ -193,7 +189,8 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse authenticateGoogleUser(String idTokenString) {
         try {
-            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(),
+                    new GsonFactory())
                     .setAudience(Collections.singletonList(googleClientId))
                     .build();
             GoogleIdToken idToken = verifier.verify(idTokenString);
@@ -203,13 +200,15 @@ public class AuthServiceImpl implements AuthService {
                 String email = payload.getEmail();
 
                 User existingUser = userRepository.findByEmail(email)
-                        .orElseThrow(() -> new UnauthorizedException("User with this email does not exist. Please register via manual sign-up first."));
+                        .orElseThrow(() -> new UnauthorizedException(
+                                "User with this email does not exist. Please register via manual sign-up first."));
 
                 if (existingUser.getStatus() != Status.ACTIVE) {
                     throw new DisabledException("Your account has been deactivated.");
                 }
 
-                String token = jwtUtil.generateToken(existingUser.getEmail(), existingUser.getRole().name(), existingUser.getUserID());
+                String token = jwtUtil.generateToken(existingUser.getEmail(), existingUser.getRole().name(),
+                        existingUser.getUserID());
 
                 AuthResponse response = authUserMapper.toResponse(existingUser);
                 response.setStatus(existingUser.getStatus().name());

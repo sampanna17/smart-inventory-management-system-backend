@@ -75,6 +75,24 @@ public class SaleServiceImpl implements SaleService {
         User user = authenticatedUserProvider.getCurrentUser();
         Customer customer = getCustomerIfPresent(request.getCustomerId());
 
+        Sale sale = buildNewSale(request, user, customer);
+        ProcessedSaleItems processed = processSaleItems(sale, request.getItems(), user.getUserID());
+
+        sale.setTotalAmount(processed.totalAmount());
+        Sale savedSale = saleRepository.save(sale);
+        List<SaleDetail> savedDetails = saleDetailRepository.saveAll(processed.details());
+
+        sendSaleOrderNotification(user, savedSale);
+        checkAndNotifyStockAlerts(user, savedDetails);
+
+        SaleResponse response = saleMapper.toResponse(savedSale, savedDetails);
+        response.setUserName(user.getFullName());
+        return response;
+    }
+
+    private record ProcessedSaleItems(List<SaleDetail> details, BigDecimal totalAmount) {}
+
+    private Sale buildNewSale(CreateSaleRequest request, User user, Customer customer) {
         Sale sale = new Sale();
         sale.setCustomer(customer);
         sale.setUserID(user.getUserID());
@@ -82,11 +100,14 @@ public class SaleServiceImpl implements SaleService {
         sale.setStatus(SaleStatus.COMPLETED);
         sale.setInvoiceNumber(generateInvoiceNumber());
         sale.setCreatedAt(LocalDateTime.now(clock));
+        return sale;
+    }
 
+    private ProcessedSaleItems processSaleItems(Sale sale, List<CreateSaleDetailRequest> items, Integer userId) {
         List<SaleDetail> details = new ArrayList<>();
         BigDecimal totalAmount = BigDecimal.ZERO;
 
-        for (CreateSaleDetailRequest itemReq : request.getItems()) {
+        for (CreateSaleDetailRequest itemReq : items) {
             Product product = productRepository.findById(itemReq.getProductId())
                     .orElseThrow(() -> new ResourceNotFoundException(MessageConstants.PRODUCT_NOT_FOUND_MSG + itemReq.getProductId()));
 
@@ -95,7 +116,7 @@ public class SaleServiceImpl implements SaleService {
                     product,
                     itemReq.getQuantity(),
                     MovementType.SALE,
-                    user.getUserID(),
+                    userId,
                     "Stock deducted for sale " + sale.getInvoiceNumber()
             );
 
@@ -112,20 +133,20 @@ public class SaleServiceImpl implements SaleService {
             details.add(detail);
         }
 
-        sale.setTotalAmount(totalAmount);
-        Sale savedSale = saleRepository.save(sale);
-        List<SaleDetail> savedDetails = saleDetailRepository.saveAll(details);
+        return new ProcessedSaleItems(details, totalAmount);
+    }
 
-        // Notify user and admins of sale order placement
+    private void sendSaleOrderNotification(User user, Sale savedSale) {
         notificationService.notifyUserAndAdmins(
                 user.getUserID(),
                 "Sales Order Placed",
-                "Sales invoice " + savedSale.getInvoiceNumber() + " for NPR " + totalAmount + " has been placed.",
+                "Sales invoice " + savedSale.getInvoiceNumber() + " for NPR " + savedSale.getTotalAmount() + " has been placed.",
                 NotificationType.ORDER_PLACED
         );
+    }
 
-        // Check stock thresholds for LOW_STOCK and OUT_OF_STOCK alerts
-        for (SaleDetail detail : savedDetails) {
+    private void checkAndNotifyStockAlerts(User user, List<SaleDetail> details) {
+        for (SaleDetail detail : details) {
             Product product = detail.getProduct();
             int remainingStock = product.getStockQuantity() != null ? product.getStockQuantity() : 0;
             if (remainingStock <= 0) {
@@ -144,10 +165,6 @@ public class SaleServiceImpl implements SaleService {
                 );
             }
         }
-
-        SaleResponse response = saleMapper.toResponse(savedSale, savedDetails);
-        response.setUserName(user.getFullName());
-        return response;
     }
 
     @Override

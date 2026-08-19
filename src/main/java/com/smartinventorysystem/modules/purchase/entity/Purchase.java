@@ -3,7 +3,10 @@ package com.smartinventorysystem.modules.purchase.entity;
 import com.smartinventorysystem.enums.PurchaseStatus;
 import com.smartinventorysystem.modules.supplier.entity.Supplier;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
@@ -14,7 +17,10 @@ import java.util.List;
 
 @Entity
 @Table(name = "Purchases")
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Purchase {
 
     @Id
