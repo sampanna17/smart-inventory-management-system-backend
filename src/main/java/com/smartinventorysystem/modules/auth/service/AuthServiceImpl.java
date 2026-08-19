@@ -25,6 +25,8 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -33,6 +35,8 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
+
+    private static final int TOKEN_EXPIRY_HOURS = 24;
 
     @Value("${spring.security.oauth2.client.registration.google.client-id}")
     private String googleClientId;
@@ -44,7 +48,6 @@ public class AuthServiceImpl implements AuthService {
     private final TokenBlacklist tokenBlacklist;
     private final Clock clock;
     private final EmailService emailService;
-
 
     @Override
     public AuthResponse signup(SignupRequest request) {
@@ -95,22 +98,14 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByActivationToken(request.getToken())
                 .orElseThrow(() -> new BadRequestException("Invalid activation token"));
 
-        // check expiry
         if (user.getTokenExpiry().isBefore(LocalDateTime.now(clock))) {
             throw new BadRequestException("Activation link expired");
         }
 
-        // set password
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
-
-        // activate account
         user.setStatus(Status.ACTIVE);
-
-        // clear token
         user.setActivationToken(null);
         user.setTokenExpiry(null);
-
-        // Update
         user.setUpdatedAt(LocalDateTime.now(clock));
         userRepository.save(user);
     }
@@ -128,7 +123,7 @@ public class AuthServiceImpl implements AuthService {
         String token = UUID.randomUUID().toString();
 
         user.setActivationToken(token);
-        user.setTokenExpiry(LocalDateTime.now(clock).plusHours(24));
+        user.setTokenExpiry(LocalDateTime.now(clock).plusHours(TOKEN_EXPIRY_HOURS));
         user.setUpdatedAt(LocalDateTime.now(clock));
 
         userRepository.save(user);
@@ -144,12 +139,13 @@ public class AuthServiceImpl implements AuthService {
     public void forgotPassword(ForgotPasswordRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BadRequestException("User not found with email: " + request.getEmail()));
-        String token = java.util.UUID.randomUUID().toString();
-        // Reusing activationToken & tokenExpiry as requested
+        String token = UUID.randomUUID().toString();
+
         user.setActivationToken(token);
-        user.setTokenExpiry(LocalDateTime.now(clock).plusHours(24));
+        user.setTokenExpiry(LocalDateTime.now(clock).plusHours(TOKEN_EXPIRY_HOURS));
         user.setUpdatedAt(LocalDateTime.now(clock));
         userRepository.save(user);
+
         emailService.sendResetPasswordEmail(
                 user.getEmail(),
                 user.getFullName(),
@@ -164,10 +160,9 @@ public class AuthServiceImpl implements AuthService {
         if (user.getTokenExpiry().isBefore(LocalDateTime.now(clock))) {
             throw new BadRequestException("Password reset link expired");
         }
-        // Set password and activate account if not already active (just in case)
+
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
-        user.setStatus(com.smartinventorysystem.enums.Status.ACTIVE);
-        // Clear token
+        user.setStatus(Status.ACTIVE);
         user.setActivationToken(null);
         user.setTokenExpiry(null);
         user.setUpdatedAt(LocalDateTime.now(clock));
@@ -219,9 +214,10 @@ public class AuthServiceImpl implements AuthService {
             }
         } catch (UnauthorizedException | DisabledException e) {
             throw e;
-        } catch (Exception e) {
+        } catch (GeneralSecurityException | IOException e) {
             throw new UnauthorizedException("Google authentication failed: " + e.getMessage());
         }
     }
 
 }
+
