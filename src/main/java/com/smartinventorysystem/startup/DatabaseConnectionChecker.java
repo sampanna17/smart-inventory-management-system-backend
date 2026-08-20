@@ -1,5 +1,6 @@
 package com.smartinventorysystem.startup;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -8,6 +9,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import javax.sql.DataSource;
 import java.sql.Connection;
 
+@Slf4j
 @Component
 public class DatabaseConnectionChecker implements CommandLineRunner {
 
@@ -39,15 +41,11 @@ public class DatabaseConnectionChecker implements CommandLineRunner {
     ){
         try(Connection connection = dataSource.getConnection()){
 
-            System.out.println(
-                    name + " Connected Successfully"
-            );
+            log.info("{} Connected Successfully", name);
 
         }catch(Exception e){
 
-            System.out.println(
-                    name + " Connection Failed"
-            );
+            log.error("{} Connection Failed: {}", name, e.getMessage(), e);
 
         }
     }

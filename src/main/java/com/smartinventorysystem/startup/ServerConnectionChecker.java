@@ -1,10 +1,12 @@
 package com.smartinventorysystem.startup;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 public class ServerConnectionChecker implements CommandLineRunner {
 
@@ -14,9 +16,9 @@ public class ServerConnectionChecker implements CommandLineRunner {
     @Override
     public void run(String @NonNull ... args) {
 
-        System.out.println("==================================");
-        System.out.println(" Spring Project Started");
-        System.out.println(" URL: http://localhost:" + port);
-        System.out.println("==================================");
+        log.info("==================================");
+        log.info(" Spring Project Started");
+        log.info(" URL: http://localhost:{}", port);
+        log.info("==================================");
     }
 }
