@@ -185,4 +185,21 @@ public final class ApiRoutes {
 
         private Dashboard() {}
     }
+
+    public static final class Reports {
+        public static final String BASE = API + "/reports";
+
+        public static final String SALES = "/sales";
+        public static final String INVENTORY = "/inventory";
+        public static final String PURCHASES = "/purchases";
+        public static final String ANALYTICS_PRODUCTS = "/analytics/products";
+        public static final String ANALYTICS_CUSTOMERS = "/analytics/customers";
+        public static final String STAFF = "/staff";
+
+        public static final String EXPORT_SALES = "/sales/export";
+        public static final String EXPORT_INVENTORY = "/inventory/export";
+        public static final String EXPORT_PURCHASES = "/purchases/export";
+
+        private Reports() {}
+    }
 }
