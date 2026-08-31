@@ -51,7 +51,7 @@ public class StockMovementServiceImpl implements StockMovementService {
     private final NotificationService notificationService;
 
     @Override
-    @Transactional
+    @Transactional("simsTransactionManager")
     public StockMovementResponse createStockMovement(CreateStockMovementRequest request) {
         User authenticatedUser = authenticatedUserProvider.getCurrentUser();
 
@@ -176,7 +176,7 @@ public class StockMovementServiceImpl implements StockMovementService {
     }
 
     @Override
-    @Transactional
+    @Transactional("simsTransactionManager")
     public void deleteStockMovement(Integer movementId) {
         StockMovement stockMovement = stockMovementRepository.findById(movementId)
                 .orElseThrow(() -> new ResourceNotFoundException(MessageConstants.STOCK_MOVEMENT_NOT_FOUND + movementId));
@@ -190,7 +190,7 @@ public class StockMovementServiceImpl implements StockMovementService {
     }
 
     @Override
-    @Transactional
+    @Transactional("simsTransactionManager")
     public void recordMovement(Product product,
                                Integer quantity,
                                MovementType movementType,

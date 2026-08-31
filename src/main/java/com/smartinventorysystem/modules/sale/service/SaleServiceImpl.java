@@ -70,7 +70,7 @@ public class SaleServiceImpl implements SaleService {
     private final NotificationService notificationService;
 
     @Override
-    @Transactional
+    @Transactional("simsTransactionManager")
     public SaleResponse createSale(CreateSaleRequest request) {
         User user = authenticatedUserProvider.getCurrentUser();
         Customer customer = getCustomerIfPresent(request.getCustomerId());
@@ -151,24 +151,24 @@ public class SaleServiceImpl implements SaleService {
             int remainingStock = product.getStockQuantity() != null ? product.getStockQuantity() : 0;
             if (remainingStock <= 0) {
                 notificationService.notifyUserAndAdmins(
-                        user.getUserID(),
-                        "Out of Stock Alert",
-                        "Product '" + product.getProductName() + "' is out of stock (Quantity: 0).",
-                        NotificationType.OUT_OF_STOCK
+                    user.getUserID(),
+                    "Out of Stock Alert",
+                    "Product '" + product.getProductName() + "' is out of stock (Quantity: 0).",
+                    NotificationType.OUT_OF_STOCK
                 );
             } else if (product.getReorderLevel() != null && remainingStock <= product.getReorderLevel()) {
                 notificationService.notifyUserAndAdmins(
-                        user.getUserID(),
-                        "Low Stock Alert",
-                        "Product '" + product.getProductName() + "' is running low on stock (Remaining: " + remainingStock + ", Reorder Level: " + product.getReorderLevel() + ").",
-                        NotificationType.LOW_STOCK
+                    user.getUserID(),
+                    "Low Stock Alert",
+                    "Product '" + product.getProductName() + "' is running low on stock (Remaining: " + remainingStock + ", Reorder Level: " + product.getReorderLevel() + ").",
+                    NotificationType.LOW_STOCK
                 );
             }
         }
     }
 
     @Override
-    @Transactional
+    @Transactional("simsTransactionManager")
     public SaleResponse updateSale(Integer saleId, UpdateSaleRequest request) {
         Sale sale = saleRepository.findByIdWithCustomer(saleId)
                 .orElseThrow(() -> new ResourceNotFoundException(MessageConstants.SALE_NOT_FOUND_MSG + saleId));
@@ -235,7 +235,7 @@ public class SaleServiceImpl implements SaleService {
     }
 
     @Override
-    @Transactional
+    @Transactional("simsTransactionManager")
     public void deleteSale(Integer saleId) {
         Sale sale = saleRepository.findById(saleId)
                 .orElseThrow(() -> new ResourceNotFoundException(MessageConstants.SALE_NOT_FOUND_MSG + saleId));
@@ -259,7 +259,7 @@ public class SaleServiceImpl implements SaleService {
     }
 
     @Override
-    @Transactional
+    @Transactional("simsTransactionManager")
     public SaleResponse updateStatus(Integer saleId, UpdateSaleStatusRequest request) {
         Sale sale = saleRepository.findByIdWithCustomer(saleId)
                 .orElseThrow(() -> new ResourceNotFoundException(MessageConstants.SALE_NOT_FOUND_MSG + saleId));
@@ -299,7 +299,7 @@ public class SaleServiceImpl implements SaleService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "simsTransactionManager", readOnly = true)
     public SaleResponse getSale(Integer saleId) {
         Sale sale = saleRepository.findByIdWithCustomer(saleId)
                 .orElseThrow(() -> new ResourceNotFoundException(MessageConstants.SALE_NOT_FOUND_MSG + saleId));
@@ -312,14 +312,14 @@ public class SaleServiceImpl implements SaleService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "simsTransactionManager", readOnly = true)
     public List<SaleSummaryResponse> getAllSales() {
         List<Sale> sales = saleRepository.findAllWithCustomer();
         return mapToSummaryResponses(sales);
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "simsTransactionManager", readOnly = true)
     public PageResponse<SaleSummaryResponse> getSales(SaleFilterRequest request) {
         Pageable pageable = createPageable(request);
         Specification<Sale> specification = SaleSpecification.withFilters(request);
@@ -398,7 +398,7 @@ public class SaleServiceImpl implements SaleService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "simsTransactionManager", readOnly = true)
     public List<SaleSummaryResponse> getSalesByCustomer(Integer customerId) {
         if (!customerRepository.existsById(customerId)) {
             throw new ResourceNotFoundException("Customer not found with ID: " + customerId);
@@ -408,7 +408,7 @@ public class SaleServiceImpl implements SaleService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "simsTransactionManager", readOnly = true)
     public List<SaleSummaryResponse> getSalesByStatus(SaleStatus status) {
         List<Sale> sales = saleRepository.findByStatusWithCustomer(status);
         return mapToSummaryResponses(sales);

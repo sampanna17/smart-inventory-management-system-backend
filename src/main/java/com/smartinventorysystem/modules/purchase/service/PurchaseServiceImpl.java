@@ -60,7 +60,7 @@ public class PurchaseServiceImpl implements PurchaseService {
     private static final String PURCHASE_NOT_FOUND = "Purchase not found with ID: ";
 
     @Override
-    @Transactional
+    @Transactional("simsTransactionManager")
     public PurchaseResponse createPurchase(CreatePurchaseRequest request) {
         User user = authenticatedUserProvider.getCurrentUser();
 
@@ -120,7 +120,7 @@ public class PurchaseServiceImpl implements PurchaseService {
     }
 
     @Override
-    @Transactional
+    @Transactional("simsTransactionManager")
     public PurchaseResponse updatePurchase(Integer purchaseId, UpdatePurchaseRequest request) {
         Purchase purchase = purchaseRepository.findByIdWithDetails(purchaseId)
                 .orElseThrow(() -> new ResourceNotFoundException(PURCHASE_NOT_FOUND + purchaseId));
@@ -173,7 +173,7 @@ public class PurchaseServiceImpl implements PurchaseService {
     }
 
     @Override
-    @Transactional
+    @Transactional("simsTransactionManager")
     public void deletePurchase(Integer purchaseId) {
         Purchase purchase = purchaseRepository.findById(purchaseId)
                 .orElseThrow(() -> new ResourceNotFoundException(PURCHASE_NOT_FOUND + purchaseId));
@@ -200,7 +200,7 @@ public class PurchaseServiceImpl implements PurchaseService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "simsTransactionManager", readOnly = true)
     public List<PurchaseResponse> getAllPurchases() {
         List<Purchase> purchases = purchaseRepository.findAllWithDetails();
         List<PurchaseResponse> responses = purchaseMapper.toResponseList(purchases);
@@ -226,7 +226,7 @@ public class PurchaseServiceImpl implements PurchaseService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "simsTransactionManager", readOnly = true)
     public PageResponse<PurchaseResponse> getPurchases(PurchaseFilterRequest request) {
         Pageable pageable = createPageable(request);
         Specification<Purchase> specification = PurchaseSpecification.withFilters(request);
@@ -323,7 +323,7 @@ public class PurchaseServiceImpl implements PurchaseService {
     }
 
     @Override
-    @Transactional
+    @Transactional("simsTransactionManager")
     public PurchaseResponse updatePurchaseStatus(Integer purchaseId, UpdatePurchaseStatusRequest request) {
         Purchase purchase = purchaseRepository.findByIdWithDetails(purchaseId)
                 .orElseThrow(() -> new ResourceNotFoundException(PURCHASE_NOT_FOUND+ purchaseId));
