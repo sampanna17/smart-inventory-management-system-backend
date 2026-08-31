@@ -11,6 +11,7 @@ import com.smartinventorysystem.modules.user.repository.UserRepository;
 import com.smartinventorysystem.utils.AuthenticatedUserProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,7 +29,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional("simsTransactionManager")
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
@@ -53,7 +53,7 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setIsRead(false);
         notification.setCreatedAt(LocalDateTime.now(clock));
 
-        Notification savedNotification = notificationRepository.saveAndFlush(notification);
+        Notification savedNotification = notificationRepository.save(notification);
         log.info("Notification successfully inserted in DB with ID: {} for user: {}", savedNotification.getNotificationID(), targetUserId);
         NotificationResponse response = notificationMapper.toResponse(savedNotification);
 
@@ -68,8 +68,8 @@ public class NotificationServiceImpl implements NotificationService {
         return response;
     }
 
+    @Async
     @Override
-    @Transactional("simsTransactionManager")
     public void broadcastNotification(CreateNotificationRequest request) {
         try {
             List<User> allUsers = userRepository.findAll();
@@ -102,7 +102,7 @@ public class NotificationServiceImpl implements NotificationService {
             notification.setIsRead(false);
             notification.setCreatedAt(LocalDateTime.now(clock));
 
-            Notification savedNotification = notificationRepository.saveAndFlush(notification);
+            Notification savedNotification = notificationRepository.save(notification);
             log.info("Notification successfully inserted in DB with ID: {} for user: {}", savedNotification.getNotificationID(), userId);
 
             try {
@@ -117,8 +117,8 @@ public class NotificationServiceImpl implements NotificationService {
         }
     }
 
+    @Async
     @Override
-    @Transactional("simsTransactionManager")
     public void notifyUserAndAdmins(
             Integer userId,
             String title,
@@ -145,8 +145,8 @@ public class NotificationServiceImpl implements NotificationService {
         }
     }
 
+    @Async
     @Override
-    @Transactional("simsTransactionManager")
     public void notifyAdmins(
             String title,
             String message,
@@ -164,7 +164,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "simsTransactionManager", readOnly = true)
     public List<NotificationResponse> getAllNotificationsForCurrentUser() {
 
         Integer currentUserId = authenticatedUserProvider.getCurrentUserId();
@@ -176,7 +176,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    @Transactional
+    @Transactional("simsTransactionManager")
     public NotificationResponse markNotificationAsRead(
             Integer notificationId) {
 
@@ -198,7 +198,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    @Transactional
+    @Transactional("simsTransactionManager")
     public void markAllNotificationsAsRead() {
 
         Integer currentUserId = authenticatedUserProvider.getCurrentUserId();
@@ -219,7 +219,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    @Transactional
+    @Transactional("simsTransactionManager")
     public void deleteNotification(
             Integer notificationId) {
 
@@ -238,7 +238,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    @Transactional
+    @Transactional("simsTransactionManager")
     public void deleteAllNotifications() {
 
         Integer currentUserId = authenticatedUserProvider.getCurrentUserId();
@@ -248,7 +248,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "simsTransactionManager", readOnly = true)
     public long getUnreadNotificationCount() {
 
         Integer currentUserId = authenticatedUserProvider.getCurrentUserId();

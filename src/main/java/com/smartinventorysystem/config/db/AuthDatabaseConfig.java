@@ -6,7 +6,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
@@ -26,14 +25,12 @@ import java.util.Map;
 )
 public class AuthDatabaseConfig {
 
-    @Primary
     @Bean(name = "authDataSource")
     @ConfigurationProperties(prefix = "auth.datasource")
     public DataSource authDataSource() {
         return DataSourceBuilder.create().build();
     }
 
-    @Primary
     @Bean(name = "authEntityManagerFactory")
     public LocalContainerEntityManagerFactoryBean authEntityManagerFactory(
             @Qualifier("authDataSource") DataSource dataSource) {
@@ -76,7 +73,6 @@ public class AuthDatabaseConfig {
         return factory;
     }
 
-    @Primary
     @Bean(name = "authTransactionManager")
     public PlatformTransactionManager authTransactionManager(
             @Qualifier("authEntityManagerFactory")

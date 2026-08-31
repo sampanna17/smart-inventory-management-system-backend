@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
@@ -36,6 +37,7 @@ import java.util.Map;
 )
 public class SIMSDatabaseConfig {
 
+    @Primary
     @Bean(name = "simsDataSource")
     @ConfigurationProperties(prefix = "sims.datasource")
     public DataSource simsDataSource() {
@@ -43,6 +45,7 @@ public class SIMSDatabaseConfig {
         return DataSourceBuilder.create().build();
     }
 
+    @Primary
     @Bean(name = "simsEntityManagerFactory")
     public LocalContainerEntityManagerFactoryBean simsEntityManagerFactory(
             @Qualifier("simsDataSource") DataSource dataSource) {
@@ -95,6 +98,7 @@ public class SIMSDatabaseConfig {
         return factory;
     }
 
+    @Primary
     @Bean(name = "simsTransactionManager")
     public PlatformTransactionManager inventoryTransactionManager(
             @Qualifier("simsEntityManagerFactory")

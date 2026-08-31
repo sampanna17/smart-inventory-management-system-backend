@@ -35,6 +35,7 @@ import java.util.*;
 
 @Service
 @RequiredArgsConstructor
+@Transactional("authTransactionManager")
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
@@ -139,7 +140,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "authTransactionManager", readOnly = true)
     public PageResponse<UserResponse> getUsers(UserFilterRequest request) {
         Pageable pageable = createPageable(request);
         Specification<User> specification = UserSpecification.withFilters(request);
@@ -149,7 +150,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "authTransactionManager", readOnly = true)
     public List<UserResponse> getAllUsers() {
         return userMapper.toResponseList(userRepository.findAll());
     }
